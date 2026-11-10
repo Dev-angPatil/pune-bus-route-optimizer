@@ -43,7 +43,6 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
   hubs,
   disabledId,
   pinColorClass,
-  accentBorderClass,
   placeholder = 'Type to search stops (e.g. FC Road, Phoenix Mall)...'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,16 +113,16 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative w-full" ref={containerRef}>
       {/* Label */}
-      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1.5">
         <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${pinColorClass} inline-block shadow-sm`}></span>
-          <span>{label}</span>
-          <span className="text-slate-500 font-normal">({marathiLabel})</span>
+          <span className={`w-2.5 h-2.5 rounded-full ${pinColorClass} inline-block shadow-sm`}></span>
+          <span className="text-slate-700">{label}</span>
+          <span className="text-slate-400 font-normal">({marathiLabel})</span>
         </span>
         {selectedHub && (
-          <span className="text-[10px] text-slate-400 px-1.5 py-0.2 bg-slate-800/80 rounded border border-slate-700/60 font-mono">
+          <span className="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 font-medium">
             {selectedHub.category}
           </span>
         )}
@@ -135,18 +134,20 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
           setIsOpen(!isOpen);
           setTimeout(() => inputRef.current?.focus(), 50);
         }}
-        className={`w-full flex items-center justify-between px-3 py-2.5 bg-slate-900/90 text-slate-100 rounded-xl text-xs md:text-sm border border-slate-700/80 cursor-pointer hover:border-slate-600 transition-all shadow-inner ${
-          isOpen ? `ring-1 ${accentBorderClass} border-transparent` : ''
+        className={`w-full flex items-center justify-between px-3.5 py-3 bg-white text-slate-800 rounded-2xl text-sm border border-slate-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all shadow-sm ${
+          isOpen ? 'ring-2 ring-blue-500/20 border-blue-500 shadow-md' : ''
         }`}
       >
-        <div className="flex items-center gap-2.5 truncate">
-          <MapPin className={`w-4 h-4 shrink-0 ${pinColorClass}`} />
+        <div className="flex items-center gap-3 truncate">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
+            <MapPin className={`w-4 h-4 ${pinColorClass}`} />
+          </div>
           <div className="truncate text-left">
-            <span className="font-medium text-slate-100 block truncate">
-              {selectedHub ? selectedHub.name : 'Select a hub'}
+            <span className="font-semibold text-slate-900 block truncate text-sm">
+              {selectedHub ? selectedHub.name : 'Choose bus stop or landmark'}
             </span>
             {selectedHub?.marathi && (
-              <span className="text-[10px] text-slate-400 block -mt-0.5 truncate">
+              <span className="text-xs text-slate-500 block truncate">
                 {selectedHub.marathi}
               </span>
             )}
@@ -154,18 +155,18 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
         </div>
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
           <ChevronDown
-            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : ''}`}
           />
         </div>
       </div>
 
       {/* Dropdown panel */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Search Input Box */}
-          <div className="p-2 border-b border-slate-800 bg-slate-950/70">
+          <div className="p-3 border-b border-slate-100 bg-slate-50/70">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 ref={inputRef}
                 type="text"
@@ -176,23 +177,23 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className="w-full pl-8 pr-7 py-1.5 bg-slate-800/90 text-slate-100 rounded-lg text-xs border border-slate-700/70 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 placeholder:text-slate-500"
+                className="w-full pl-9 pr-8 py-2 bg-white text-slate-800 rounded-xl text-xs sm:text-sm border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 shadow-inner"
                 autoFocus
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
             {/* Quick Keyword Pills for Viva / Fast demo */}
-            <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar text-[10px] text-slate-400">
-              <span className="text-slate-400 shrink-0">Quick:</span>
+            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar text-xs">
+              <span className="text-slate-400 text-[11px] font-medium shrink-0">Quick picks:</span>
               {['FC Road', 'Phoenix Mall', 'Nal Stop', 'Swargate', 'Hinjewadi'].map((term) => (
                 <button
                   key={term}
@@ -202,7 +203,7 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
                     setQuery(term);
                     setHighlightedIndex(0);
                   }}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 shrink-0 transition-colors"
+                  className="px-2 py-0.5 rounded-lg bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 hover:border-blue-200 shrink-0 text-[11px] font-medium transition-all shadow-2xs"
                 >
                   {term}
                 </button>
@@ -211,10 +212,10 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
           </div>
 
           {/* Hubs List */}
-          <div className="max-h-56 overflow-y-auto divide-y divide-slate-800/50">
+          <div className="max-h-60 overflow-y-auto divide-y divide-slate-100">
             {filteredHubs.length === 0 ? (
-              <div className="p-4 text-center text-xs text-slate-400">
-                No stops found matching <span className="text-slate-200 font-mono">"{query}"</span>
+              <div className="p-6 text-center text-xs text-slate-400">
+                No stops found matching <span className="text-slate-700 font-semibold">"{query}"</span>
               </div>
             ) : (
               filteredHubs.map((hub, idx) => {
@@ -227,35 +228,35 @@ export const SearchableStopSelect: React.FC<SearchableStopSelectProps> = ({
                     key={hub.id}
                     onClick={() => handleSelect(hub.id)}
                     onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
+                    className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-cyan-950/60 text-cyan-200'
+                        ? 'bg-blue-50 text-blue-900 border-l-4 border-blue-600'
                         : isHighlighted
-                        ? 'bg-slate-800/80 text-slate-100'
-                        : 'text-slate-300 hover:bg-slate-800/50'
+                        ? 'bg-slate-50 text-slate-900'
+                        : 'text-slate-700 hover:bg-slate-50/70'
                     }`}
                   >
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-100 truncate">{hub.name}</span>
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-900 truncate">{hub.name}</span>
                         {hub.id.includes('station') || hub.id.includes('shivajinagar') || hub.id.includes('swargate') ? (
-                          <span title="Metro / Train Interchange">
-                            <Train className="w-3 h-3 text-purple-400 shrink-0" />
+                          <span title="Metro / Train Interchange" className="px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-100 text-[10px] flex items-center gap-0.5 font-medium shrink-0">
+                            <Train className="w-2.5 h-2.5 text-purple-600" /> Metro Hub
                           </span>
                         ) : null}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                        {hub.marathi && <span className="text-slate-400">{hub.marathi}</span>}
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                        {hub.marathi && <span className="font-medium text-slate-600">{hub.marathi}</span>}
                         <span>•</span>
-                        <span className="text-slate-400">{hub.category}</span>
+                        <span className="text-slate-500">{hub.category}</span>
                         {aliases.length > 0 && query && (
-                          <span className="text-cyan-400/80 italic truncate">
+                          <span className="text-blue-600 italic truncate font-medium">
                             (Matches: {aliases.filter((a) => a.includes(query.toLowerCase())).join(', ')})
                           </span>
                         )}
                       </div>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-cyan-400 shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
                   </div>
                 );
               })

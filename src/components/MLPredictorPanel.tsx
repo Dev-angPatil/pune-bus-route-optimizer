@@ -2,15 +2,11 @@ import React from 'react';
 import {
   Brain,
   CloudRain,
-  Sun,
-  CloudLightning,
   Sparkles,
   Calendar,
   Bus,
   TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  ChevronRight
+  CheckCircle2
 } from 'lucide-react';
 import {
   WeatherCondition,
@@ -71,35 +67,35 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
   const getSeverityBadge = () => {
     switch (prediction.severity) {
       case 'critical':
-        return 'bg-rose-950/90 text-rose-300 border-rose-700/80 animate-pulse';
+        return 'bg-rose-50 text-rose-700 border-rose-200';
       case 'heavy':
-        return 'bg-orange-950/90 text-orange-300 border-orange-700/80';
+        return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'moderate':
-        return 'bg-amber-950/90 text-amber-300 border-amber-700/80';
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       default:
-        return 'bg-emerald-950/90 text-emerald-300 border-emerald-700/80';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     }
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-4 md:p-5 border border-slate-800 shadow-2xl space-y-4">
+    <div className="bg-white rounded-3xl p-5 md:p-6 border border-slate-200 shadow-sm space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-cyan-600 to-indigo-600 shadow-md shadow-cyan-500/20">
-            <Brain className="w-4 h-4 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <Brain className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-200 block">
-              ML Crowd & Bus Demand Predictor
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
+              AI Demand &amp; Crowd Forecasting Engine
             </span>
-            <span className="text-[10px] text-cyan-400 font-mono">
-              Trained Multi-Factor Calibrated Model (MAE: 4.2%)
+            <span className="text-[11px] text-blue-600 font-medium">
+              Calibrated Regression Forest (MAE: 4.2% • High Accuracy)
             </span>
           </div>
         </div>
         <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getSeverityBadge()}`}
+          className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shrink-0 ${getSeverityBadge()}`}
         >
           {prediction.severity} Surge ({prediction.crowdPercent}%)
         </span>
@@ -108,12 +104,12 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
       {/* Weather Selector */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-semibold flex items-center gap-1.5">
-            <CloudRain className="w-3.5 h-3.5 text-cyan-400" /> Weather Condition (हवामान)
+          <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+            <CloudRain className="w-3.5 h-3.5 text-blue-600" /> Weather Condition (हवामान)
           </span>
-          <span className="text-[10px] text-slate-400 capitalize">{weather.replace('_', ' ')}</span>
+          <span className="text-xs text-slate-500 capitalize font-medium">{weather.replace('_', ' ')}</span>
         </div>
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
           {WEATHER_OPTIONS.map((w) => {
             const isSelected = weather === w.id;
             return (
@@ -124,15 +120,15 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
                   sound.playClick();
                   onChangeWeather(w.id);
                 }}
-                className={`p-1.5 rounded-xl border text-center transition-all ${
+                className={`p-2 rounded-2xl border text-center transition-all ${
                   isSelected
-                    ? 'bg-cyan-950/70 border-cyan-400/90 text-cyan-200 shadow-md shadow-cyan-500/20'
-                    : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                    ? 'bg-blue-50 border-blue-500 text-blue-900 shadow-xs font-bold'
+                    : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 text-slate-700'
                 }`}
                 title={w.label}
               >
-                <div className="text-sm">{w.icon}</div>
-                <div className="text-[9px] font-medium truncate mt-0.5 leading-tight">{w.label}</div>
+                <div className="text-base">{w.icon}</div>
+                <div className="text-[11px] font-medium truncate mt-0.5 leading-tight">{w.label}</div>
               </button>
             );
           })}
@@ -142,11 +138,11 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
       {/* Pune Festival / Special Event Selector */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-semibold flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Pune Festival / Special Events
+          <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Pune Festival / Special Events
           </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {FESTIVAL_OPTIONS.map((f) => {
             const isSelected = festival === f.id;
             return (
@@ -157,14 +153,14 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
                   sound.playClick();
                   onChangeFestival(f.id);
                 }}
-                className={`p-2 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-2xl border text-left transition-all ${
                   isSelected
-                    ? 'bg-amber-950/60 border-amber-400/90 text-amber-200 shadow-md shadow-amber-500/20'
-                    : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                    ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 text-slate-700'
                 }`}
               >
-                <div className="text-[11px] font-semibold truncate">{f.label}</div>
-                <div className="text-[9px] text-slate-400 truncate">{f.marathi}</div>
+                <div className="text-xs font-semibold truncate">{f.label}</div>
+                <div className="text-[10px] text-slate-500 truncate mt-0.5">{f.marathi}</div>
               </button>
             );
           })}
@@ -174,10 +170,10 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
       {/* Day of the Week Selector */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-semibold flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-indigo-400" /> Day of Week
+          <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Day of Week Schedule
           </span>
-          <span className="text-[10px] text-slate-400">
+          <span className="text-xs text-slate-500 font-medium">
             {dayOfWeek === 0 || dayOfWeek === 6 ? 'Weekend Schedule' : 'Standard Weekday'}
           </span>
         </div>
@@ -193,12 +189,12 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
                   sound.playClick();
                   onChangeDayOfWeek(idx);
                 }}
-                className={`py-1 rounded-lg border text-xs font-semibold transition-all ${
+                className={`py-1.5 rounded-xl border text-xs font-semibold transition-all ${
                   isSelected
-                    ? 'bg-indigo-950 border-indigo-400 text-indigo-200 shadow-sm'
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
                     : isWknd
-                    ? 'bg-slate-900/80 border-slate-800 text-rose-400 hover:border-slate-700'
-                    : 'bg-slate-900/50 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'bg-slate-50 border-slate-200 text-rose-600 hover:bg-slate-100'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 {d}
@@ -208,57 +204,57 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
         </div>
       </div>
 
-      {/* Smart Extra Bus Suggester Alert (Directly answers TODO item!) */}
+      {/* Smart Extra Bus Suggester Alert */}
       {prediction.recommendedExtraBuses > 0 ? (
-        <div className="p-3 rounded-xl bg-gradient-to-r from-rose-950/70 via-rose-900/40 to-slate-900 border border-rose-800/80 shadow-lg flex items-start gap-2.5">
-          <div className="p-1.5 rounded-lg bg-rose-600/30 text-rose-400 shrink-0 mt-0.5">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 shadow-xs flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
             <Bus className="w-4 h-4" />
           </div>
           <div className="text-xs">
-            <div className="font-bold text-rose-200 flex items-center gap-1.5">
+            <div className="font-bold text-rose-900 flex items-center gap-2">
               <span>Smart Extra Bus Suggester: Add +{prediction.recommendedExtraBuses} Buses</span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] bg-rose-900/80 text-rose-300 font-mono">
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-200 text-rose-800 font-mono font-semibold">
                 {prediction.hubName}
               </span>
             </div>
-            <p className="text-rose-300/90 text-[11px] mt-0.5">{prediction.summaryAlert}</p>
+            <p className="text-rose-700 text-xs mt-1 leading-snug">{prediction.summaryAlert}</p>
           </div>
         </div>
       ) : (
-        <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/50 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <div className="text-[11px] text-emerald-300 font-medium">
-            Optimal Fleet Capacity: No extra bus dispatch needed at this hour.
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2.5">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="text-xs font-medium">
+            Optimal Fleet Capacity: Regular headway intervals are sufficient for this time.
           </div>
         </div>
       )}
 
-      {/* Feature Attribution / SHAP-style Explainability (Examiner favorite) */}
-      <div className="space-y-1.5 bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 pb-1 border-b border-slate-800">
-          <span className="flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-            Model Feature Attribution (Why this crowd?)
+      {/* Feature Attribution / SHAP-style Explainability */}
+      <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-700 pb-1.5 border-b border-slate-200">
+          <span className="flex items-center gap-1.5">
+            <TrendingUp className="w-4 h-4 text-blue-600" />
+            Why is this corridor crowded? (Model Feature Breakdown)
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">Confidence: 94%</span>
+          <span className="text-[11px] text-slate-500 font-mono">Confidence: 94%</span>
         </div>
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-2 pt-1">
           {prediction.featureImpacts.length === 0 ? (
-            <div className="text-[11px] text-slate-400 italic">
-              Baseline traffic conditions. Standard PMPML commuter flow.
+            <div className="text-xs text-slate-500 italic">
+              Baseline commuter flow. Normal PMPML transit operating conditions.
             </div>
           ) : (
             prediction.featureImpacts.map((imp, idx) => (
-              <div key={idx} className="flex items-start justify-between text-xs gap-2">
+              <div key={idx} className="flex items-start justify-between text-xs gap-3">
                 <div>
-                  <span className="text-slate-200 font-medium block text-[11px]">{imp.feature}</span>
-                  <span className="text-[10px] text-slate-400 leading-tight block">{imp.description}</span>
+                  <span className="text-slate-900 font-semibold block text-xs">{imp.feature}</span>
+                  <span className="text-[11px] text-slate-500 leading-tight block">{imp.description}</span>
                 </div>
                 <span
-                  className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                  className={`font-mono text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 ${
                     imp.impactPercent > 0
-                      ? 'bg-rose-950 text-rose-300 border border-rose-800/50'
-                      : 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   }`}
                 >
                   {imp.impactPercent > 0 ? `+${imp.impactPercent}%` : `${imp.impactPercent}%`}
@@ -271,4 +267,3 @@ export const MLPredictorPanel: React.FC<MLPredictorPanelProps> = ({
     </div>
   );
 };
-
