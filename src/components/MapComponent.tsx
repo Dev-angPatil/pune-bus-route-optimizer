@@ -1,7 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import { Compass, Sun, Moon } from 'lucide-react';
 import transitData from '../data/puneTransitData.json';
+import metroData from '../data/puneMetroData.json';
 import { Hub, NetworkEdge, ActiveBus, OptimizationComparison } from '../types/transit';
+import { sound } from '../utils/audio';
 
 interface MapComponentProps {
   comparison: OptimizationComparison | null;
@@ -11,6 +14,7 @@ interface MapComponentProps {
   onSelectHub: (hub: Hub) => void;
   showHeatmap: boolean;
   showAllCorridors: boolean;
+  showMetro?: boolean;
   tileProvider: 'osm_dark' | 'osm_standard' | 'carto' | 'mapbox';
   apiKey?: string;
 }
@@ -23,6 +27,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   onSelectHub,
   showHeatmap,
   showAllCorridors,
+  showMetro = true,
   tileProvider,
   apiKey
 }) => {
@@ -30,10 +35,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const baseTileLayerRef = useRef<L.TileLayer | null>(null);
   
+  // 3D Perspective Tilt state
+  const [is3D, setIs3D] = useState<boolean>(false);
+  
   // Layer groups for clean updates without flickering
   const corridorsLayerRef = useRef<L.LayerGroup | null>(null);
   const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
   const routesLayerRef = useRef<L.LayerGroup | null>(null);
+  const metroLayerRef = useRef<L.LayerGroup | null>(null);
   const nodesLayerRef = useRef<L.LayerGroup | null>(null);
   const busesLayerRef = useRef<L.LayerGroup | null>(null);
 
@@ -52,6 +61,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     corridorsLayerRef.current = L.layerGroup().addTo(map);
+    metroLayerRef.current = L.layerGroup().addTo(map);
     heatmapLayerRef.current = L.layerGroup().addTo(map);
     routesLayerRef.current = L.layerGroup().addTo(map);
     nodesLayerRef.current = L.layerGroup().addTo(map);
@@ -76,8 +86,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       baseTileLayerRef.current = null;
     }
 
-    // Manage container dark filter class
-    container.classList.remove('osm-dark-tiles', 'clean-tiles');
+    // Manage container dark filter class & Day/Night transitions
+    container.classList.remove('osm-dark-tiles', 'osm-day-tiles', 'clean-tiles');
+
+    const isDaytime = activeHour >= 6 && activeHour < 18;
 
     let url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     let attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors | PMPML Pune';
@@ -85,8 +97,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     let maxZoom = 19;
 
     if (tileProvider === 'osm_dark') {
-      // 100% Free OpenStreetMap with high-tech Dark Contrast styling (NO API KEY, NO WATERMARK)
-      container.classList.add('osm-dark-tiles');
+      // Automatic Day / Night transition based on commute time slider
+      if (isDaytime) {
+        container.classList.add('osm-day-tiles');
+      } else {
+        container.classList.add('osm-dark-tiles');
+      }
       url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
       attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> | PMPML Pune';
     } else if (tileProvider === 'osm_standard') {
@@ -117,7 +133,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     tileLayer.addTo(map);
     baseTileLayerRef.current = tileLayer;
-  }, [tileProvider, apiKey]);
+  }, [tileProvider, apiKey, activeHour]);
 
   // Render Background Corridors
   useEffect(() => {
@@ -146,6 +162,87 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       corridorsLayerRef.current?.addLayer(poly);
     });
   }, [showAllCorridors]);
+
+  // Render Pune Metro Rail Network & Multi-Modal Transfer Stations
+  useEffect(() => {
+    if (!metroLayerRef.current) return;
+    metroLayerRef.current.clearLayers();
+
+    if (!showMetro) return;
+
+    metroData.lines.forEach((line) => {
+      const latlngs: [number, number][] = line.stations.map((s) => [s.lat, s.lon]);
+
+      // Metro Track Line (Dashed bold line with high visibility)
+      const metroTrackGlow = L.polyline(latlngs, {
+        color: line.color,
+        weight: 6,
+        opacity: 0.35
+      });
+      metroLayerRef.current?.addLayer(metroTrackGlow);
+
+      const metroTrack = L.polyline(latlngs, {
+        color: line.color,
+        weight: 3.5,
+        opacity: 0.9,
+        dashArray: '6, 6'
+      });
+
+      metroTrack.bindTooltip(
+        `<div class="text-xs">
+          <strong style="color: ${line.color};">${line.name}</strong><br/>
+          <span>${line.marathi} • ${line.length_km} km</span><br/>
+          <span class="text-slate-300">${line.corridor}</span>
+        </div>`,
+        { sticky: true }
+      );
+      metroLayerRef.current?.addLayer(metroTrack);
+
+      // Metro Station Markers
+      line.stations.forEach((st) => {
+        const isInterchange = !!st.interchange;
+        const stationIcon = L.divIcon({
+          className: 'metro-station-marker',
+          html: `
+            <div class="relative flex items-center justify-center cursor-pointer group" style="width: 22px; height: 22px;">
+              ${
+                isInterchange
+                  ? `<div class="absolute inset-0 rounded-full animate-ping opacity-75" style="background: ${line.color};"></div>`
+                  : ''
+              }
+              <div class="relative z-10 w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-white shadow-md"
+                   style="background: ${line.color}; box-shadow: 0 0 8px ${line.color};">
+              </div>
+            </div>
+          `,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+
+        const feeder = metroData.multimodal_feeder_routes.find((f) => f.metro_station.includes(st.name));
+
+        const marker = L.marker([st.lat, st.lon], { icon: stationIcon });
+        marker.bindTooltip(
+          `<div class="text-xs space-y-1">
+            <div class="font-bold flex items-center gap-1" style="color: ${line.color};">
+              🚆 ${st.name}
+            </div>
+            <div class="text-[10px] text-slate-300">${line.name}</div>
+            ${
+              feeder
+                ? `<div class="pt-1 border-t border-slate-700/80 text-[10px] text-emerald-400">
+                    <strong>PMPML Feeder Buses:</strong> ${feeder.pmpml_feeder_buses.join(', ')}<br/>
+                    <span class="text-slate-300">Connects: ${feeder.connects_to.join(', ')}</span>
+                  </div>`
+                : ''
+            }
+          </div>`,
+          { direction: 'top', offset: [0, -6] }
+        );
+        metroLayerRef.current?.addLayer(marker);
+      });
+    });
+  }, [showMetro]);
 
   // Render Crowd Heatmap
   useEffect(() => {
@@ -226,6 +323,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         { sticky: true }
       );
       routesLayerRef.current.addLayer(stdPoly);
+
+      // Moving Crowd Dots (Congested / Backlogged Commuter Flow)
+      const stdCrowdDots = L.polyline(stdPoints, {
+        color: '#fecdd3',
+        weight: 2.5,
+        opacity: 0.85,
+        className: 'animated-crowd-dots'
+      });
+      routesLayerRef.current.addLayer(stdCrowdDots);
     }
 
     // Optimized Route: Glowing Neon Cyan Flowing Line
@@ -252,6 +358,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         { sticky: true }
       );
       routesLayerRef.current.addLayer(optPoly);
+
+      // Moving Crowd Dots (Smooth High-Velocity Commuter Stream)
+      const optCrowdDots = L.polyline(optPoints, {
+        color: '#ffffff',
+        weight: 3.5,
+        opacity: 0.95,
+        className: 'animated-crowd-dots'
+      });
+      routesLayerRef.current.addLayer(optCrowdDots);
 
       // Fit bounds to show route smoothly
       const allBounds = L.latLngBounds([...optPoints, ...stdPoints]);
@@ -363,10 +478,48 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     });
   }, [activeBuses]);
 
+  const isDaytime = activeHour >= 6 && activeHour < 18;
+
   return (
     <div className="relative w-full h-full">
-      <div ref={mapContainerRef} className="w-full h-full z-0" />
-      
+      <div
+        ref={mapContainerRef}
+        className={`w-full h-full z-0 transition-all duration-700 ${is3D ? 'map-container-3d' : ''}`}
+      />
+
+      {/* Floating Map Perspective & Day/Night Controls (Top Right) */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2 pointer-events-auto">
+        {/* Day / Night ambient indicator */}
+        <div
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md border shadow-lg transition-all ${
+            isDaytime
+              ? 'bg-amber-950/50 text-amber-300 border-amber-600/40 shadow-amber-500/10'
+              : 'bg-slate-900/80 text-cyan-300 border-slate-700/80 shadow-cyan-500/10'
+          }`}
+          title={`Commute ambient tone: ${isDaytime ? 'Daylight (06:00 - 18:00)' : 'Night Neon Glow'}`}
+        >
+          {isDaytime ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-cyan-400" />}
+          <span>{isDaytime ? 'Sunlight' : 'Night Glow'}</span>
+        </div>
+
+        {/* 3D Map Tilt Perspective Button */}
+        <button
+          onClick={() => {
+            sound.playClick();
+            setIs3D(!is3D);
+          }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md border shadow-lg transition-all active:scale-95 ${
+            is3D
+              ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white border-cyan-400 shadow-cyan-500/30'
+              : 'bg-slate-900/80 text-slate-300 border-slate-700/80 hover:text-white hover:border-slate-500'
+          }`}
+          title="Toggle 3D Perspective Aerial Tilt"
+        >
+          <Compass className={`w-3.5 h-3.5 transition-transform duration-300 ${is3D ? 'rotate-45 text-white' : 'text-cyan-400'}`} />
+          <span>{is3D ? '2D View' : '3D Tilt'}</span>
+        </button>
+      </div>
+
       {/* Visual Legend */}
       <div className="absolute bottom-4 left-4 z-10 glass-panel rounded-xl p-3 text-xs space-y-2 border border-slate-800 shadow-xl backdrop-blur-md max-w-[240px]">
         <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Map Legend</div>
@@ -381,6 +534,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             <span className="text-slate-300">Congested Standard Route</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 border-b-2 border-dotted border-white"></div>
+            <span className="text-slate-300">Moving Crowd Particles</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_#ef4444]"></div>
             <span className="text-slate-300">Severe Chokepoint (&gt;75%)</span>
           </div>
@@ -391,6 +548,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           <div className="flex items-center gap-2">
             <div className="px-1 py-0.5 rounded bg-cyan-500 text-slate-950 font-bold text-[9px]">PMPML</div>
             <span className="text-slate-300">Live PMPML Bus in Transit</span>
+          </div>
+          <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+            <div className="w-4 h-0.5 border-b-2 border-dashed border-purple-500"></div>
+            <span className="text-purple-300 font-medium">Metro Line 1 (Purple)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 border-b-2 border-dashed border-cyan-400"></div>
+            <span className="text-cyan-300 font-medium">Metro Line 2 (Aqua)</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bus, Volume2, VolumeX, BookOpen, Layers, Flame, Map } from 'lucide-react';
+import { Bus, Volume2, VolumeX, BookOpen, Layers, Flame, Map, Train } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface HeaderProps {
@@ -9,6 +9,8 @@ interface HeaderProps {
   onToggleHeatmap: () => void;
   showAllCorridors: boolean;
   onToggleCorridors: () => void;
+  showMetro: boolean;
+  onToggleMetro: () => void;
   onOpenAlgorithmGuide: () => void;
   onOpenMapSettings: () => void;
   tileProvider: string;
@@ -21,6 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleHeatmap,
   showAllCorridors,
   onToggleCorridors,
+  showMetro,
+  onToggleMetro,
   onOpenAlgorithmGuide,
   onOpenMapSettings,
   tileProvider
@@ -98,6 +102,23 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Layers className="w-3.5 h-3.5" />
           <span className="hidden md:inline">Network Grid</span>
+        </button>
+
+        {/* Pune Metro Toggle */}
+        <button
+          onClick={() => {
+            sound.playClick();
+            onToggleMetro();
+          }}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            showMetro
+              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-[0_0_12px_rgba(168,85,247,0.25)]'
+              : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+          }`}
+          title="Toggle Pune Metro Rail Network"
+        >
+          <Train className="w-3.5 h-3.5 text-purple-400" />
+          <span className="hidden md:inline">Pune Metro</span>
         </button>
 
         {/* Sound Toggle */}

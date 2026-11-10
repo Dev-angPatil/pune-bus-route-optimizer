@@ -7,6 +7,13 @@ import {
   RouteSegment,
   OptimizationComparison
 } from '../types/transit';
+import { predictHubCrowd, WeatherCondition, FestivalType } from './crowdMLModel';
+
+export interface MLTransitFactors {
+  weather?: WeatherCondition;
+  festival?: FestivalType;
+  dayOfWeek?: number;
+}
 
 const hubs: Record<string, Hub> = {};
 transitData.hubs.forEach((h: unknown) => {
@@ -35,11 +42,33 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
   return R * c;
 }
 
-export function getNodeCrowd(nodeId: string, hour: number, surgeNodes: string[] = []): number {
-  const baseCurve = hourlyCurve[hour % 24] || 0.5;
+export function getNodeCrowd(
+  nodeId: string,
+  hour: number,
+  surgeNodes: string[] = [],
+  mlFactors?: MLTransitFactors
+): number {
   const hub = hubs[nodeId];
-  if (!hub) return baseCurve;
+  if (!hub) return hourlyCurve[hour % 24] || 0.5;
 
+  // If ML factors (weather, festivals, day of week) are provided, use ML inference
+  if (mlFactors && (mlFactors.weather || mlFactors.festival || mlFactors.dayOfWeek !== undefined)) {
+    const mlResult = predictHubCrowd({
+      hubId: nodeId,
+      hour,
+      dayOfWeek: mlFactors.dayOfWeek ?? 1,
+      weather: mlFactors.weather ?? 'clear',
+      festival: mlFactors.festival ?? 'none'
+    });
+
+    let crowd = mlResult.predictedCrowd;
+    if (surgeNodes.includes(nodeId)) {
+      crowd = Math.min(1.0, crowd * 1.35 + 0.12);
+    }
+    return Math.round(crowd * 100) / 100;
+  }
+
+  const baseCurve = hourlyCurve[hour % 24] || 0.5;
   const multiplier = hub.peak_rush_multiplier || 1.0;
   let crowd = Math.min(1.0, baseCurve * (multiplier / 2.5));
 
@@ -60,10 +89,11 @@ export function calculateEdgeWeight(
   hour: number,
   alpha: number = 1.8,
   beta: number = 1.2,
-  surgeNodes: string[] = []
+  surgeNodes: string[] = [],
+  mlFactors?: MLTransitFactors
 ): { dynamicCost: number; actualTimeMins: number; avgCrowd: number } {
-  const cU = getNodeCrowd(u, hour, surgeNodes);
-  const cV = getNodeCrowd(v, hour, surgeNodes);
+  const cU = getNodeCrowd(u, hour, surgeNodes, mlFactors);
+  const cV = getNodeCrowd(v, hour, surgeNodes, mlFactors);
   const avgCrowd = (cU + cV) / 2.0;
 
   const chokeFactor = isChokepoint && avgCrowd > 0.55 ? 1.55 : 1.0;
@@ -80,7 +110,8 @@ export function solveRoute(
   end: string,
   mode: 'standard' | 'crowd_optimized' | 'astar' = 'crowd_optimized',
   hour: number = 8,
-  surgeNodes: string[] = []
+  surgeNodes: string[] = [],
+  mlFactors?: MLTransitFactors
 ): RouteResult {
   if (!hubs[start] || !hubs[end]) {
     return {
@@ -151,7 +182,8 @@ export function solveRoute(
           hour,
           2.0,
           1.5,
-          surgeNodes
+          surgeNodes,
+          mlFactors
         );
         edgeCost = dynamicCost;
 
@@ -222,7 +254,8 @@ export function solveRoute(
       hour,
       2.0,
       1.5,
-      surgeNodes
+      surgeNodes,
+      mlFactors
     );
 
     totalDist += neighborEdge.distance;
@@ -266,10 +299,11 @@ export function comparePuneRoutes(
   start: string,
   end: string,
   hour: number = 8,
-  surgeNodes: string[] = []
+  surgeNodes: string[] = [],
+  mlFactors?: MLTransitFactors
 ): OptimizationComparison {
-  const standard = solveRoute(start, end, 'standard', hour, surgeNodes);
-  const optimized = solveRoute(start, end, 'crowd_optimized', hour, surgeNodes);
+  const standard = solveRoute(start, end, 'standard', hour, surgeNodes, mlFactors);
+  const optimized = solveRoute(start, end, 'crowd_optimized', hour, surgeNodes, mlFactors);
 
   const timeDiff = Math.max(0, standard.estimated_travel_time_mins - optimized.estimated_travel_time_mins);
   const timeSavedPct =

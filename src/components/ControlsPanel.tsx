@@ -1,8 +1,9 @@
 import React from 'react';
-import { ArrowLeftRight, Clock, Zap, MapPin, Navigation, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ArrowLeftRight, Clock, Zap, MapPin, Navigation, AlertTriangle, ShieldCheck, BarChart3 } from 'lucide-react';
 import transitData from '../data/puneTransitData.json';
 import { Hub, Scenario } from '../types/transit';
 import { sound } from '../utils/audio';
+import { SearchableStopSelect } from './SearchableStopSelect';
 
 interface ControlsPanelProps {
   origin: string;
@@ -65,29 +66,21 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       </div>
 
       {/* Origin & Destination Selectors */}
-      <div className="space-y-2.5">
-        <div className="relative">
-          <label className="text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span> Origin Hub (प्रस्थान)
-          </label>
-          <div className="relative">
-            <MapPin className="w-4 h-4 text-cyan-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <select
-              value={origin}
-              onChange={(e) => {
-                sound.playClick();
-                onSelectOrigin(e.target.value);
-              }}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-900/90 text-slate-100 rounded-xl text-xs md:text-sm border border-slate-700/80 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 appearance-none cursor-pointer"
-            >
-              {hubs.map((hub) => (
-                <option key={`origin-${hub.id}`} value={hub.id} disabled={hub.id === destination}>
-                  {hub.name} ({hub.category})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <div className="space-y-3">
+        <SearchableStopSelect
+          label="Origin Hub"
+          marathiLabel="प्रस्थान"
+          value={origin}
+          onChange={(newOrigin) => {
+            sound.playClick();
+            onSelectOrigin(newOrigin);
+          }}
+          hubs={hubs}
+          disabledId={destination}
+          pinColorClass="bg-cyan-400 text-cyan-400 shadow-cyan-500/50"
+          accentBorderClass="border-cyan-400 ring-cyan-400"
+          placeholder="Search origin stop (e.g. FC Road, Hinjewadi)..."
+        />
 
         {/* Swap Button */}
         <div className="flex justify-center -my-1">
@@ -103,40 +96,94 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
           </button>
         </div>
 
-        <div className="relative">
-          <label className="text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Destination Hub (गंतव्य)
-          </label>
-          <div className="relative">
-            <MapPin className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <select
-              value={destination}
-              onChange={(e) => {
-                sound.playClick();
-                onSelectDestination(e.target.value);
-              }}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-900/90 text-slate-100 rounded-xl text-xs md:text-sm border border-slate-700/80 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 appearance-none cursor-pointer"
-            >
-              {hubs.map((hub) => (
-                <option key={`dest-${hub.id}`} value={hub.id} disabled={hub.id === origin}>
-                  {hub.name} ({hub.category})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <SearchableStopSelect
+          label="Destination Hub"
+          marathiLabel="गंतव्य"
+          value={destination}
+          onChange={(newDest) => {
+            sound.playClick();
+            onSelectDestination(newDest);
+          }}
+          hubs={hubs}
+          disabledId={origin}
+          pinColorClass="bg-emerald-400 text-emerald-400 shadow-emerald-500/50"
+          accentBorderClass="border-emerald-400 ring-emerald-400"
+          placeholder="Search destination stop (e.g. Phoenix Mall, Swargate)..."
+        />
       </div>
 
-      {/* Time of Day Slider */}
-      <div className="space-y-1.5 pt-1">
+      {/* Hourly Traffic Bar Chart & Time of Day Slider */}
+      <div className="space-y-2 pt-1 border-t border-slate-800/60">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-semibold flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-cyan-400" /> Commute Time
+          <span className="text-slate-400 font-semibold flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-cyan-400" /> Commute Time & Hourly Traffic
           </span>
-          <span className="font-mono font-bold text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-            {formatHour(hour)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-bold text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              {formatHour(hour)}
+            </span>
+          </div>
         </div>
+
+        {/* Mini 24-Hour Traffic Bar Chart */}
+        <div className="bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
+          <div className="flex items-end gap-1 h-12 w-full pt-1 pb-1">
+            {transitData.hourly_crowd_curve.map((val: number, h: number) => {
+              const isCurrentHour = h === hour;
+              // Color based on congestion
+              const barColor =
+                val > 0.75
+                  ? 'bg-rose-500 hover:bg-rose-400'
+                  : val > 0.45
+                  ? 'bg-amber-500 hover:bg-amber-400'
+                  : 'bg-emerald-500 hover:bg-emerald-400';
+
+              const heightPct = Math.max(14, Math.round(val * 100));
+
+              return (
+                <button
+                  key={`traffic-bar-${h}`}
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    onChangeHour(h);
+                  }}
+                  title={`${formatHour(h)}: ${Math.round(val * 100)}% traffic density`}
+                  className={`flex-1 transition-all rounded-t-sm flex flex-col justify-end relative group ${
+                    isCurrentHour ? 'scale-y-110 z-10' : 'opacity-70 hover:opacity-100'
+                  }`}
+                  style={{ height: '100%' }}
+                >
+                  <div
+                    className={`w-full rounded-t-sm transition-all ${barColor} ${
+                      isCurrentHour ? 'ring-2 ring-cyan-300 ring-offset-1 ring-offset-slate-950 shadow-lg shadow-cyan-500/50' : ''
+                    }`}
+                    style={{ height: `${heightPct}%` }}
+                  />
+                  {/* Tooltip on hover */}
+                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-900 text-slate-100 text-[9px] px-1.5 py-0.5 rounded border border-slate-700 pointer-events-none opacity-0 group-hover:opacity-100 whitespace-nowrap shadow-md z-30 transition-opacity">
+                    {h}:00 ({Math.round(val * 100)}%)
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bar Chart Legend */}
+          <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800/60 font-mono">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Clear (&lt;45%)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Moderate (45-75%)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Heavy Rush (&gt;75%)
+            </span>
+          </div>
+        </div>
+
+        {/* Range slider */}
         <input
           type="range"
           min="0"

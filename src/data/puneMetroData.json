@@ -1,0 +1,75 @@
+{
+  "system": "Pune Metro Rail (Maha-Metro)",
+  "status": "Operational & Feeder Integrated",
+  "lines": [
+    {
+      "id": "purple_line",
+      "name": "Purple Line (Line 1)",
+      "marathi": "जांभळी मार्गिका",
+      "color": "#9333ea",
+      "corridor": "PCMC ↔ Civil Court ↔ Swargate",
+      "length_km": 17.5,
+      "stations": [
+        { "name": "PCMC", "lat": 18.6298, "lon": 73.8131, "interchange": "bhosari_terminal" },
+        { "name": "Sant Tukaram Nagar", "lat": 18.6189, "lon": 73.8189, "interchange": null },
+        { "name": "Bhosari (Nashik Phata)", "lat": 18.6042, "lon": 73.8263, "interchange": null },
+        { "name": "Kasarwadi", "lat": 18.5912, "lon": 73.8291, "interchange": null },
+        { "name": "Phugewadi", "lat": 18.5831, "lon": 73.8322, "interchange": null },
+        { "name": "Dapodi", "lat": 18.5750, "lon": 73.8370, "interchange": null },
+        { "name": "Bopodi", "lat": 18.5621, "lon": 73.8415, "interchange": null },
+        { "name": "Shivajinagar Metro", "lat": 18.5320, "lon": 73.8525, "interchange": "shivajinagar" },
+        { "name": "Civil Court Interchange", "lat": 18.5285, "lon": 73.8560, "interchange": "manapa_pmc" },
+        { "name": "Budhwar Peth", "lat": 18.5180, "lon": 73.8568, "interchange": null },
+        { "name": "Mandai", "lat": 18.5125, "lon": 73.8569, "interchange": null },
+        { "name": "Swargate Underground Metro", "lat": 18.5018, "lon": 73.8586, "interchange": "swargate" }
+      ]
+    },
+    {
+      "id": "aqua_line",
+      "name": "Aqua Line (Line 2)",
+      "marathi": "अ‍ॅक्वा मार्गिका",
+      "color": "#06b6d4",
+      "corridor": "Vanaz ↔ Civil Court ↔ Ramwadi",
+      "length_km": 15.7,
+      "stations": [
+        { "name": "Vanaz", "lat": 18.5074, "lon": 73.8042, "interchange": "kothrud_depot" },
+        { "name": "Anand Nagar", "lat": 18.5085, "lon": 73.8130, "interchange": null },
+        { "name": "Ideal Colony", "lat": 18.5110, "lon": 73.8210, "interchange": null },
+        { "name": "Nal Stop", "lat": 18.5124, "lon": 73.8299, "interchange": "kothrud_depot" },
+        { "name": "Garware College", "lat": 18.5140, "lon": 73.8375, "interchange": null },
+        { "name": "Deccan Gymkhana Metro", "lat": 18.5170, "lon": 73.8440, "interchange": "deccan_gymkhana" },
+        { "name": "PMC Bhavan (Ma Na Pa)", "lat": 18.5245, "lon": 73.8520, "interchange": "manapa_pmc" },
+        { "name": "Civil Court Interchange", "lat": 18.5285, "lon": 73.8560, "interchange": "manapa_pmc" },
+        { "name": "Mangalwar Peth", "lat": 18.5260, "lon": 73.8640, "interchange": null },
+        { "name": "Pune Railway Station Metro", "lat": 18.5284, "lon": 73.8744, "interchange": "pune_station" },
+        { "name": "Ruby Hall Clinic", "lat": 18.5340, "lon": 73.8810, "interchange": null },
+        { "name": "Bund Garden", "lat": 18.5390, "lon": 73.8890, "interchange": "yerawada_chowk" },
+        { "name": "Kalyani Nagar", "lat": 18.5470, "lon": 73.9020, "interchange": null },
+        { "name": "Ramwadi Metro Terminal", "lat": 18.5520, "lon": 73.9160, "interchange": "viman_nagar" }
+      ]
+    }
+  ],
+  "multimodal_feeder_routes": [
+    {
+      "metro_station": "Civil Court Interchange",
+      "pmpml_feeder_buses": ["100", "204", "Metro-Shuttle-1"],
+      "connects_to": ["Hinjewadi Phase 3", "Shivaji Chowk", "Aundh"]
+    },
+    {
+      "metro_station": "Swargate Underground Metro",
+      "pmpml_feeder_buses": ["42", "111", "BRT-South"],
+      "connects_to": ["Katraj Depot", "Sinhagad Road", "Hadapsar"]
+    },
+    {
+      "metro_station": "Ramwadi Metro Terminal",
+      "pmpml_feeder_buses": ["98", "Airport-Direct", "Kharadi-Express"],
+      "connects_to": ["Viman Nagar / Phoenix Mall", "Kharadi EON Park", "Pune Airport"]
+    },
+    {
+      "metro_station": "Nal Stop / Vanaz",
+      "pmpml_feeder_buses": ["103", "Kothrud-Ring"],
+      "connects_to": ["Chandani Chowk", "Warje Flyover", "Kothrud Depot"]
+    }
+  ]
+}
+

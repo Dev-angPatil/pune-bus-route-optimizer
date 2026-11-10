@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import transitData from './data/puneTransitData.json';
 import { Hub, Scenario, OptimizationComparison, ActiveBus } from './types/transit';
 import { comparePuneRoutes } from './utils/routeOptimizer';
@@ -13,6 +14,8 @@ import { ActiveBusesPanel } from './components/ActiveBusesPanel';
 import { StopInspectorModal } from './components/StopInspectorModal';
 import { AlgorithmGuideModal } from './components/AlgorithmGuideModal';
 import { MapSettingsModal } from './components/MapSettingsModal';
+import { MLPredictorPanel } from './components/MLPredictorPanel';
+import { WeatherCondition, FestivalType } from './utils/crowdMLModel';
 
 export const App: React.FC = () => {
   // State
@@ -33,6 +36,13 @@ export const App: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
   const [showAllCorridors, setShowAllCorridors] = useState<boolean>(true);
+  const [showMetro, setShowMetro] = useState<boolean>(true);
+
+  // Machine Learning Crowd Factors State
+  const [weather, setWeather] = useState<WeatherCondition>('clear');
+  const [festival, setFestival] = useState<FestivalType>('none');
+  const [dayOfWeek, setDayOfWeek] = useState<number>(1); // Monday by default
+  const [showMLPanel, setShowMLPanel] = useState<boolean>(false);
   
   // Map Provider & API Key State (Default: osm_dark - 100% Free OpenStreetMap with zero watermarks & zero keys)
   const [tileProvider, setTileProvider] = useState<'osm_dark' | 'osm_standard' | 'carto' | 'mapbox'>(() => {
@@ -72,11 +82,18 @@ export const App: React.FC = () => {
     startNode: string,
     endNode: string,
     simHour: number,
-    surgeList: string[]
+    surgeList: string[],
+    overrideML?: { weather?: WeatherCondition; festival?: FestivalType; dayOfWeek?: number }
   ) => {
     setIsOptimizing(true);
+    const mlFactors = {
+      weather: overrideML?.weather ?? weather,
+      festival: overrideML?.festival ?? festival,
+      dayOfWeek: overrideML?.dayOfWeek ?? dayOfWeek
+    };
+
     setTimeout(() => {
-      const res = comparePuneRoutes(startNode, endNode, simHour, surgeList);
+      const res = comparePuneRoutes(startNode, endNode, simHour, surgeList, mlFactors);
       setComparison(res);
       setIsOptimizing(false);
 
@@ -89,7 +106,7 @@ export const App: React.FC = () => {
           colors: ['#06b6d4', '#10b981', '#38bdf8']
         });
       }
-    }, 250);
+    }, 200);
   };
 
   const handleRunOptimization = () => {
@@ -122,6 +139,21 @@ export const App: React.FC = () => {
     runOptimization(origin, destination, newHour, surgeNodes);
   };
 
+  const handleChangeWeather = (newWeather: WeatherCondition) => {
+    setWeather(newWeather);
+    runOptimization(origin, destination, hour, surgeNodes, { weather: newWeather });
+  };
+
+  const handleChangeFestival = (newFestival: FestivalType) => {
+    setFestival(newFestival);
+    runOptimization(origin, destination, hour, surgeNodes, { festival: newFestival });
+  };
+
+  const handleChangeDayOfWeek = (newDow: number) => {
+    setDayOfWeek(newDow);
+    runOptimization(origin, destination, hour, surgeNodes, { dayOfWeek: newDow });
+  };
+
   // Periodic bus speed fluctuation to simulate live traffic
   useEffect(() => {
     const interval = setInterval(() => {
@@ -149,6 +181,8 @@ export const App: React.FC = () => {
         onToggleHeatmap={() => setShowHeatmap(!showHeatmap)}
         showAllCorridors={showAllCorridors}
         onToggleCorridors={() => setShowAllCorridors(!showAllCorridors)}
+        showMetro={showMetro}
+        onToggleMetro={() => setShowMetro(!showMetro)}
         onOpenAlgorithmGuide={() => setIsAlgorithmGuideOpen(true)}
         onOpenMapSettings={() => setIsMapSettingsOpen(true)}
         tileProvider={tileProvider}
@@ -169,6 +203,7 @@ export const App: React.FC = () => {
             }}
             showHeatmap={showHeatmap}
             showAllCorridors={showAllCorridors}
+            showMetro={showMetro}
             tileProvider={tileProvider}
             apiKey={apiKey}
           />
@@ -195,6 +230,45 @@ export const App: React.FC = () => {
             onRunOptimization={handleRunOptimization}
             isOptimizing={isOptimizing}
           />
+
+          {/* Collapsible ML Crowd & Weather Predictor Toggle */}
+          <div className="glass-panel rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setShowMLPanel(!showMLPanel);
+              }}
+              className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-200 hover:text-cyan-300 transition-colors bg-slate-900/60"
+            >
+              <div className="flex items-center gap-2">
+                <Brain className="w-4 h-4 text-cyan-400" />
+                <span>AI / ML Crowd &amp; Weather Engine</span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                <span>{showMLPanel ? 'Hide Controls' : 'Weather & Festivals'}</span>
+                {showMLPanel ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </button>
+
+            {showMLPanel && (
+              <div className="p-1 border-t border-slate-800/80">
+                <MLPredictorPanel
+                  selectedHubId={origin}
+                  hour={hour}
+                  weather={weather}
+                  onChangeWeather={handleChangeWeather}
+                  festival={festival}
+                  onChangeFestival={handleChangeFestival}
+                  dayOfWeek={dayOfWeek}
+                  onChangeDayOfWeek={handleChangeDayOfWeek}
+                />
+              </div>
+            )}
+          </div>
 
           {comparison && (
             <MetricsPanel comparison={comparison} />

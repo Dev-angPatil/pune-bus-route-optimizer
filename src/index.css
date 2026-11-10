@@ -35,6 +35,29 @@
 /* OpenStreetMap Dark Neon Theme (100% Free, Zero API Keys, Zero Watermarks) */
 .osm-dark-tiles .leaflet-tile {
   filter: brightness(0.6) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.3) brightness(0.75) !important;
+  transition: filter 0.8s ease;
+}
+
+/* Daylight Warmth for Daytime Hours (06:00 to 18:00) */
+.osm-day-tiles .leaflet-tile {
+  filter: brightness(0.85) contrast(1.2) saturate(1.1) !important;
+  transition: filter 0.8s ease;
+}
+
+/* 3D Map Perspective Tilt */
+.map-container-3d {
+  perspective: 1100px;
+}
+
+.map-container-3d .leaflet-pane {
+  transform: rotateX(28deg) scale(1.06) translateY(-25px) !important;
+  transform-origin: 50% 60% !important;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Smooth 2D default reset */
+.leaflet-pane {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Clean Unfiltered Tiles */
@@ -60,6 +83,22 @@
 .animated-congested-route {
   stroke-dasharray: 6 6;
   opacity: 0.85;
+}
+
+/* Moving Crowd Flow Particles */
+@keyframes crowdParticleFlow {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animated-crowd-dots {
+  stroke-dasharray: 3 14;
+  stroke-linecap: round;
+  animation: crowdParticleFlow 1.5s linear infinite;
 }
 
 /* Glowing Pulsing Markers */
