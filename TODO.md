@@ -1,85 +1,55 @@
-# 📋 Pune PMPML Bus Route Optimizer — Project Roadmap & TODO
+# 📋 Pune Bus Route Optimizer — Simple To-Do List
 
-This document tracks upcoming improvements, testing targets, feature additions, and academic presentation enhancements for the **Pune Bus Route Optimization System**.
-
----
-
-## 🎯 1. Things to Make (New Features)
-
-### 🚏 Transit & Micro-Stop Search
-- [ ] **Full 6,745 Micro-Stop Fuzzy Search**: Implement client-side fuzzy search (using `Fuse.js` or `MiniSearch`) so users can search for any small local bus stop across Pune (e.g. *Goodluck Cafe, Nal Stop, Pune Station Sassoon, Balewadi High Street*), which snaps to the nearest major corridor hub.
-- [ ] **Custom Waypoint Routing (Via Stops)**: Allow commuters to add intermediate "Via" stops (e.g. Swargate ➔ *via Deccan Gymkhana* ➔ Hinjewadi Phase 3).
-- [ ] **Multi-Modal Metro Integration**: Overlay the Pune Metro Line 1 (Purple - PCMC to Swargate) and Line 2 (Aqua - Vanaz to Ramwadi) interchange stations with feeder bus synchronization.
-
-### 🚌 Fleet Operations & Smart Dispatch
-- [ ] **Automated Bus Re-allocation Solver**: Implement a Hungarian Matching / Linear Programming module that calculates how many extra feeder buses to deploy from low-demand depots (e.g. Upper Depot) to choked hubs (e.g. Hinjewadi / Swargate).
-- [ ] **Headway & Passenger Waiting Queue Model**: Model passenger platform queue accumulation:
-  $$\text{Queue}(t) = \text{Queue}(t-1) + \lambda(t) \cdot \Delta t - \mu \cdot \text{BusesArrived}$$
-- [ ] **Fare & Ticket Savings Calculator**: Estimate commuter fare savings against auto-rickshaw surge pricing during peak hours.
-
-### 📱 Presentation & Offline Resilience
-- [ ] **Progressive Web App (PWA) Offline Mode**: Add `vite-plugin-pwa` with Service Workers caching map tiles and GTFS graph so the demo works smoothly in college auditoriums with weak Wi-Fi.
-- [ ] **Exportable Route PDF / Itinerary**: One-click download button for commuters/examiners containing turn-by-turn bus schedules, stops, and crowd risk advisory.
+A simple, clear checklist of things we need to build, test, and improve for our college project.
 
 ---
 
-## 🎨 2. Things to Improve (Visual Thrills & UI/UX)
+## 🚀 1. Things to Build (New Features)
 
-### 🗺️ Map Aesthetics & Cyberpunk Transit HUD
-- [ ] **Animated Commuter Streamlines (Particle Flow)**: Add Canvas/WebGL animated particle trails along road lines indicating commuter flow velocity (faster moving particles = fluid traffic; slow red particles = bottleneck crawl).
-- [ ] **3D Iso-Perspective / Pitch Tilt**: Add a 3D isometric pitch tilt control (`map.setPitch` with MapLibre or Leaflet 2.5D building extrusion).
-- [ ] **Dynamic Day/Night Lighting Shift**: Smoothly transition map background lighting, ambient glow, and sky colors as the user drags the 24-hour time slider from dawn to dusk.
-- [ ] **Interactive Chokepoint Pulse Rings**: Enhance bottleneck hubs with concentric radar sweep animations when crowd exceeds 80%.
-
-### 📊 Comparative Analytics
-- [ ] **Interactive Speed & Delay Graph**: Add a lightweight Recharts/Chart.js timeline comparing standard vs optimized travel times across each hour of the day.
-- [ ] **Carbon Offset Certificate**: Display a gamified badge showing kilograms of carbon prevented by avoiding idling gridlock.
+- [ ] **Bus Stop Search Bar**: Let users type any stop name (like *FC Road, Phoenix Mall, Nal Stop*) and find it instantly.
+- [ ] **Add Pune Metro Connections**: Show Pune Metro stations (like *Civil Court, Vanaz, Ramwadi*) and show which buses connect to them.
+- [ ] **Offline Mode (No Wi-Fi Needed)**: Save the map and routes locally so the demo never fails, even if college Wi-Fi is down.
+- [ ] **Smart Extra Bus Suggester**: When Swargate or Hinjewadi gets too crowded, display a simple alert: *"Add 2 extra buses on this route"*.
+- [ ] **Download Route Summary**: Add a button to download the travel directions and time saved as a clean PDF or text slip.
 
 ---
 
-## 🧪 3. Things to Test (Quality Assurance & Benchmarking)
+## 🎨 2. Things to Improve (Visuals & Look)
 
-### 🔬 Algorithmic Unit & Integration Testing
-- [ ] **Graph Solver Correctness (`vitest` / `pytest`)**:
-  - Test Dijkstra and A* return identical optimal paths under uniform edge weights.
-  - Test graph connectivity (ensure every node has at least one valid path to every other node).
-  - Verify boundary edge cases (same origin and destination; cyclic loops; zero-crowd midnight conditions).
-- [ ] **Performance & Stress Benchmarking**:
-  - Benchmark 500 consecutive random origin-destination routing queries to verify sub-5ms average latency.
-  - Memory heap profiling: ensure the client-side graph stays under 15 MB in memory.
-
-### 🌐 Cross-Browser & Device Compatibility
-- [ ] **Mobile Touch Responsiveness**: Verify bottom drawer sheet behavior and pinch-to-zoom on iOS Safari and Android Chrome.
-- [ ] **Tile Provider Fallbacks**: Test automatic fallback if OpenStreetMap CDN has high latency (switch seamlessly between OSM and fallback mirror).
-- [ ] **Web Audio API Policy Test**: Verify sound effects unlock gracefully on initial user tap without throwing autoplay warnings.
+- [ ] **Moving Crowd Dots**: Add animated flowing dots on the roads so you can literally see the crowd moving across Pune.
+- [ ] **Day & Night Mode**: When moving the time slider, make the map smoothly change from morning sunlight to night glow.
+- [ ] **3D Map Tilt**: Add a simple button to tilt the map in 3D perspective to look like modern Google Earth / Apple Maps.
+- [ ] **Hourly Traffic Bar Chart**: A small chart showing the best time to travel (green = empty, yellow = busy, red = heavy rush).
 
 ---
 
-## 🎓 4. Academic & College Viva Deliverables
+## 🧪 3. Things to Test (Making Sure Nothing Breaks)
 
-- [ ] **IEEE-Style Research Project Report**: Scaffold `docs/IEEE_Project_Report.md` complete with:
-  - Literature survey (comparing Dijkstra, Bellman-Ford, Contraction Hierarchies, and Ant Colony Optimization).
-  - Mathematical formulation of BPR congestion latency function.
-  - Experimental validation tables for Pune traffic corridors.
-- [ ] **Project Presentation Slides (PPT Template)**: Create structured slide decks covering:
-  - Slide 1: Title, Team Members, Guide / College Name.
-  - Slide 2: Problem Statement (Pune Traffic Bottlenecks).
-  - Slide 3: PMPML GTFS Data Architecture.
-  - Slide 4: Mathematical Optimization Equations.
-  - Slide 5: Live Case Study (Swargate to Hinjewadi 34.3% Time Savings).
-  - Slide 6: Results, Future Scope & Conclusions.
-- [ ] **Examiner Q&A Rehearsal Script**: Documenting 20 common viva questions with concise technical answers.
+- [ ] **Test on Mobile Phones**: Open on Android and iPhone to make sure touch, swipe, and buttons look great on small screens.
+- [ ] **Check All 24 Bus Stops**: Test every combination of stops to make sure no route gives an error.
+- [ ] **Speed Check**: Make sure the route finds the best path in less than 1 second.
+- [ ] **Sound Check**: Make sure the sound effects work smoothly when clicking buttons without annoying pops.
 
 ---
 
-## 📈 Status Dashboard
+## 🎓 4. College Viva & Submission Prep
 
-| Milestone | Target Date | Status |
-| :--- | :--- | :--- |
-| **Phase 1: Core PMPML GTFS Extraction & Graph Generation** | Completed | ✅ Done |
-| **Phase 2: Adaptive Dijkstra Optimization Engine (Python + TS)** | Completed | ✅ Done |
-| **Phase 3: Interactive Leaflet Map with Zero-Key OSM Dark Mode** | Completed | ✅ Done |
-| **Phase 4: Side-by-Side Comparison HUD & Sound Effects** | Completed | ✅ Done |
-| **Phase 5: GitHub Pages Automated Deployment** | Completed | ✅ Done |
-| **Phase 6: Micro-Stop Search & Multi-Modal Feeder Optimization** | Upcoming | ⏳ Planned |
-| **Phase 7: PWA Offline Support & IEEE Academic Report** | Upcoming | ⏳ Planned |
+- [ ] **PowerPoint Presentation Slides (PPT)**:
+  - Slide 1: Project Title & Team Names
+  - Slide 2: Why Pune needs this (Traffic in Hinjewadi, University Circle, Swargate)
+  - Slide 3: How it works (Real PMPML data + Smart algorithm)
+  - Slide 4: Results (Saves up to 34% travel time)
+  - Slide 5: Live Demo screenshot
+- [ ] **Short Project Report**: A clean 3 to 5 page PDF report to submit to the teacher.
+- [ ] **Top 10 Viva Questions & Simple Answers**: A quick cheat sheet of easy answers for the external examiner.
+
+---
+
+## ✅ What is Already Completed
+
+- [x] Downloaded and cleaned real Pune PMPML bus routes and stops.
+- [x] Built the smart algorithm that bypasses traffic bottlenecks.
+- [x] Created the dark mode Pune map (Free, no watermarks, no API keys needed).
+- [x] Added live animated moving buses on the map.
+- [x] Added side-by-side comparison showing time saved and fuel saved.
+- [x] Uploaded everything to GitHub and published live on GitHub Pages.
