@@ -11,6 +11,8 @@ interface MapComponentProps {
   onSelectHub: (hub: Hub) => void;
   showHeatmap: boolean;
   showAllCorridors: boolean;
+  tileProvider: 'cartodb' | 'osm' | 'mapbox' | 'maptiler';
+  apiKey?: string;
 }
 
 export const MapComponent: React.FC<MapComponentProps> = ({
@@ -20,10 +22,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   activeBuses,
   onSelectHub,
   showHeatmap,
-  showAllCorridors
+  showAllCorridors,
+  tileProvider,
+  apiKey
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const baseTileLayerRef = useRef<L.TileLayer | null>(null);
   
   // Layer groups for clean updates without flickering
   const corridorsLayerRef = useRef<L.LayerGroup | null>(null);
@@ -40,16 +45,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       center: [18.5284, 73.8446], // Centered around Central Pune (Shivajinagar/Deccan)
       zoom: 12,
       minZoom: 10,
-      maxZoom: 17,
+      maxZoom: 18,
       zoomControl: false
     });
-
-    // Sleek CartoDB Dark Matter tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> | PMPML Pune Transit',
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -66,6 +64,48 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Update Base Tile Layer dynamically based on provider and optional API key
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    if (baseTileLayerRef.current) {
+      map.removeLayer(baseTileLayerRef.current);
+      baseTileLayerRef.current = null;
+    }
+
+    let url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    let attribution = '&copy; <a href="https://carto.com/">CARTO</a> | PMPML Pune';
+    let subdomains = 'abcd';
+    let maxZoom = 19;
+
+    if (tileProvider === 'osm') {
+      url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>';
+      subdomains = 'abc';
+      maxZoom = 19;
+    } else if (tileProvider === 'mapbox' && apiKey) {
+      url = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${apiKey.trim()}`;
+      attribution = '&copy; <a href="https://mapbox.com/">Mapbox</a>';
+      subdomains = 'a';
+      maxZoom = 20;
+    } else if (tileProvider === 'maptiler' && apiKey) {
+      url = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${apiKey.trim()}`;
+      attribution = '&copy; <a href="https://maptiler.com/">MapTiler</a>';
+      subdomains = 'a';
+      maxZoom = 20;
+    }
+
+    const tileLayer = L.tileLayer(url, {
+      attribution,
+      subdomains,
+      maxZoom
+    });
+
+    tileLayer.addTo(map);
+    baseTileLayerRef.current = tileLayer;
+  }, [tileProvider, apiKey]);
 
   // Render Background Corridors
   useEffect(() => {
@@ -179,7 +219,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
     // Optimized Route: Glowing Neon Cyan Flowing Line
     if (optPoints.length > 0) {
-      // Glow underlay
       const glowPoly = L.polyline(optPoints, {
         color: '#06b6d4',
         weight: 8,
@@ -187,7 +226,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       });
       routesLayerRef.current.addLayer(glowPoly);
 
-      // Core electric line
       const optPoly = L.polyline(optPoints, {
         color: '#10b981',
         weight: 5,
@@ -275,11 +313,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     busesLayerRef.current.clearLayers();
 
     activeBuses.forEach(bus => {
-      // Find edge for bus
       const edge = (transitData.edges as unknown as NetworkEdge[]).find(e => e.id === bus.current_edge);
       if (!edge || !edge.polyline || edge.polyline.length === 0) return;
 
-      // Position bus at midpoint of polyline
       const midIdx = Math.floor(edge.polyline.length / 2);
       const [bLat, bLon] = edge.polyline[midIdx];
 

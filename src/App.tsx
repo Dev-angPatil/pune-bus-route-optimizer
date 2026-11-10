@@ -12,6 +12,7 @@ import { MetricsPanel } from './components/MetricsPanel';
 import { ActiveBusesPanel } from './components/ActiveBusesPanel';
 import { StopInspectorModal } from './components/StopInspectorModal';
 import { AlgorithmGuideModal } from './components/AlgorithmGuideModal';
+import { MapSettingsModal } from './components/MapSettingsModal';
 
 export const App: React.FC = () => {
   // State
@@ -33,6 +34,15 @@ export const App: React.FC = () => {
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
   const [showAllCorridors, setShowAllCorridors] = useState<boolean>(true);
   
+  // Map Provider & API Key State
+  const [tileProvider, setTileProvider] = useState<'cartodb' | 'osm' | 'mapbox' | 'maptiler'>(() => {
+    return (localStorage.getItem('pmpml_tile_provider') as 'cartodb' | 'osm' | 'mapbox' | 'maptiler') || 'cartodb';
+  });
+  const [apiKey, setApiKey] = useState<string>(() => {
+    return localStorage.getItem('pmpml_map_api_key') || '';
+  });
+  const [isMapSettingsOpen, setIsMapSettingsOpen] = useState<boolean>(false);
+
   // Modals
   const [inspectedHub, setInspectedHub] = useState<Hub | null>(null);
   const [isAlgorithmGuideOpen, setIsAlgorithmGuideOpen] = useState<boolean>(false);
@@ -46,6 +56,16 @@ export const App: React.FC = () => {
   useEffect(() => {
     runOptimization(origin, destination, hour, surgeNodes);
   }, []);
+
+  const handleSaveApiKey = (newKey: string) => {
+    setApiKey(newKey);
+    localStorage.setItem('pmpml_map_api_key', newKey);
+  };
+
+  const handleSelectProvider = (prov: 'cartodb' | 'osm' | 'mapbox' | 'maptiler') => {
+    setTileProvider(prov);
+    localStorage.setItem('pmpml_tile_provider', prov);
+  };
 
   // Run optimization logic
   const runOptimization = (
@@ -130,6 +150,8 @@ export const App: React.FC = () => {
         showAllCorridors={showAllCorridors}
         onToggleCorridors={() => setShowAllCorridors(!showAllCorridors)}
         onOpenAlgorithmGuide={() => setIsAlgorithmGuideOpen(true)}
+        onOpenMapSettings={() => setIsMapSettingsOpen(true)}
+        tileProvider={tileProvider}
       />
 
       {/* Main View Area */}
@@ -147,6 +169,8 @@ export const App: React.FC = () => {
             }}
             showHeatmap={showHeatmap}
             showAllCorridors={showAllCorridors}
+            tileProvider={tileProvider}
+            apiKey={apiKey}
           />
         </div>
 
@@ -192,6 +216,16 @@ export const App: React.FC = () => {
       <AlgorithmGuideModal
         isOpen={isAlgorithmGuideOpen}
         onClose={() => setIsAlgorithmGuideOpen(false)}
+      />
+
+      {/* Map Settings & Optional API Key Modal */}
+      <MapSettingsModal
+        isOpen={isMapSettingsOpen}
+        onClose={() => setIsMapSettingsOpen(false)}
+        tileProvider={tileProvider}
+        onSelectProvider={handleSelectProvider}
+        apiKey={apiKey}
+        onSaveApiKey={handleSaveApiKey}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bus, Volume2, VolumeX, Sparkles, BookOpen, Layers, Flame } from 'lucide-react';
+import { Bus, Volume2, VolumeX, BookOpen, Layers, Flame, Map } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface HeaderProps {
@@ -10,6 +10,8 @@ interface HeaderProps {
   showAllCorridors: boolean;
   onToggleCorridors: () => void;
   onOpenAlgorithmGuide: () => void;
+  onOpenMapSettings: () => void;
+  tileProvider: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleHeatmap,
   showAllCorridors,
   onToggleCorridors,
-  onOpenAlgorithmGuide
+  onOpenAlgorithmGuide,
+  onOpenMapSettings,
+  tileProvider
 }) => {
   return (
     <header className="h-16 px-4 md:px-6 bg-[#080c14]/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between z-20 sticky top-0">
@@ -48,6 +52,20 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Action Controls */}
       <div className="flex items-center gap-2 md:gap-3">
+        {/* Map Source & API Key settings button */}
+        <button
+          onClick={() => {
+            sound.playClick();
+            onOpenMapSettings();
+          }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-cyan-500/50 transition-all"
+          title="Change Map Provider & API Key"
+        >
+          <Map className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="hidden lg:inline capitalize">Tiles: {tileProvider}</span>
+          <span className="lg:hidden">Map</span>
+        </button>
+
         {/* Heatmap Toggle */}
         <button
           onClick={() => {
