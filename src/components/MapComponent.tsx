@@ -11,7 +11,7 @@ interface MapComponentProps {
   onSelectHub: (hub: Hub) => void;
   showHeatmap: boolean;
   showAllCorridors: boolean;
-  tileProvider: 'cartodb' | 'osm' | 'mapbox' | 'maptiler';
+  tileProvider: 'osm_dark' | 'osm_standard' | 'carto' | 'mapbox';
   apiKey?: string;
 }
 
@@ -67,32 +67,44 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
   // Update Base Tile Layer dynamically based on provider and optional API key
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapInstanceRef.current || !mapContainerRef.current) return;
     const map = mapInstanceRef.current;
+    const container = mapContainerRef.current;
 
     if (baseTileLayerRef.current) {
       map.removeLayer(baseTileLayerRef.current);
       baseTileLayerRef.current = null;
     }
 
-    let url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    let attribution = '&copy; <a href="https://carto.com/">CARTO</a> | PMPML Pune';
-    let subdomains = 'abcd';
+    // Manage container dark filter class
+    container.classList.remove('osm-dark-tiles', 'clean-tiles');
+
+    let url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    let attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors | PMPML Pune';
+    let subdomains = 'abc';
     let maxZoom = 19;
 
-    if (tileProvider === 'osm') {
+    if (tileProvider === 'osm_dark') {
+      // 100% Free OpenStreetMap with high-tech Dark Contrast styling (NO API KEY, NO WATERMARK)
+      container.classList.add('osm-dark-tiles');
+      url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> | PMPML Pune';
+    } else if (tileProvider === 'osm_standard') {
+      // 100% Free Standard OpenStreetMap (Clean unfiltered road & geography)
+      container.classList.add('clean-tiles');
       url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
       attribution = '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>';
-      subdomains = 'abc';
-      maxZoom = 19;
-    } else if (tileProvider === 'mapbox' && apiKey) {
+    } else if (tileProvider === 'carto') {
+      // CARTO Basemaps (Appends key if user provided one from carto.com/basemaps/apikey)
+      container.classList.add('clean-tiles');
+      const keyParam = apiKey && apiKey.trim().length > 0 ? `?key=${apiKey.trim()}` : '';
+      url = `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${keyParam}`;
+      attribution = '&copy; <a href="https://carto.com/">CARTO</a>';
+      subdomains = 'abcd';
+    } else if (tileProvider === 'mapbox' && apiKey && apiKey.trim().length > 0) {
+      container.classList.add('clean-tiles');
       url = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}?access_token=${apiKey.trim()}`;
       attribution = '&copy; <a href="https://mapbox.com/">Mapbox</a>';
-      subdomains = 'a';
-      maxZoom = 20;
-    } else if (tileProvider === 'maptiler' && apiKey) {
-      url = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${apiKey.trim()}`;
-      attribution = '&copy; <a href="https://maptiler.com/">MapTiler</a>';
       subdomains = 'a';
       maxZoom = 20;
     }
@@ -117,9 +129,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     (transitData.edges as unknown as NetworkEdge[]).forEach(edge => {
       const isChoke = edge.is_chokepoint;
       const poly = L.polyline(edge.polyline, {
-        color: isChoke ? '#f59e0b' : '#334155',
+        color: isChoke ? '#f59e0b' : '#38bdf8',
         weight: isChoke ? 3 : 2,
-        opacity: isChoke ? 0.6 : 0.35,
+        opacity: isChoke ? 0.7 : 0.4,
         dashArray: isChoke ? '4, 4' : undefined
       });
 
@@ -174,7 +186,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const std = comparison.standard_route;
     const opt = comparison.crowd_optimized_route;
 
-    // Helper to get full polyline for a path
     const getPathPoints = (pathIds: string[]): [number, number][] => {
       const pts: [number, number][] = [];
       for (let i = 0; i < pathIds.length - 1; i++) {
@@ -202,7 +213,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       const stdPoly = L.polyline(stdPoints, {
         color: '#ef4444',
         weight: 4,
-        opacity: 0.75,
+        opacity: 0.85,
         dashArray: '8, 8',
         className: 'animated-congested-route'
       });

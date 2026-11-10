@@ -32,8 +32,14 @@
   font-family: inherit;
 }
 
-.leaflet-tile {
-  filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.65) !important;
+/* OpenStreetMap Dark Neon Theme (100% Free, Zero API Keys, Zero Watermarks) */
+.osm-dark-tiles .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.3) brightness(0.75) !important;
+}
+
+/* Clean Unfiltered Tiles */
+.clean-tiles .leaflet-tile {
+  filter: none !important;
 }
 
 /* Custom animated dashed route */

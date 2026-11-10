@@ -34,9 +34,9 @@ export const App: React.FC = () => {
   const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
   const [showAllCorridors, setShowAllCorridors] = useState<boolean>(true);
   
-  // Map Provider & API Key State
-  const [tileProvider, setTileProvider] = useState<'cartodb' | 'osm' | 'mapbox' | 'maptiler'>(() => {
-    return (localStorage.getItem('pmpml_tile_provider') as 'cartodb' | 'osm' | 'mapbox' | 'maptiler') || 'cartodb';
+  // Map Provider & API Key State (Default: osm_dark - 100% Free OpenStreetMap with zero watermarks & zero keys)
+  const [tileProvider, setTileProvider] = useState<'osm_dark' | 'osm_standard' | 'carto' | 'mapbox'>(() => {
+    return (localStorage.getItem('pmpml_tile_provider') as 'osm_dark' | 'osm_standard' | 'carto' | 'mapbox') || 'osm_dark';
   });
   const [apiKey, setApiKey] = useState<string>(() => {
     return localStorage.getItem('pmpml_map_api_key') || '';
@@ -62,7 +62,7 @@ export const App: React.FC = () => {
     localStorage.setItem('pmpml_map_api_key', newKey);
   };
 
-  const handleSelectProvider = (prov: 'cartodb' | 'osm' | 'mapbox' | 'maptiler') => {
+  const handleSelectProvider = (prov: 'osm_dark' | 'osm_standard' | 'carto' | 'mapbox') => {
     setTileProvider(prov);
     localStorage.setItem('pmpml_tile_provider', prov);
   };
