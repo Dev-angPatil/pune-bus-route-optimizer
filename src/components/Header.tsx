@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bus, Volume2, VolumeX, BookOpen, Layers, Flame, Map } from 'lucide-react';
+import { Bus, Volume2, VolumeX, BookOpen, Layers, Flame, Map, Train, Sparkles } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface HeaderProps {
@@ -9,6 +9,8 @@ interface HeaderProps {
   onToggleHeatmap: () => void;
   showAllCorridors: boolean;
   onToggleCorridors: () => void;
+  showMetro: boolean;
+  onToggleMetro: () => void;
   onOpenAlgorithmGuide: () => void;
   onOpenMapSettings: () => void;
   tileProvider: string;
@@ -21,49 +23,54 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleHeatmap,
   showAllCorridors,
   onToggleCorridors,
+  showMetro,
+  onToggleMetro,
   onOpenAlgorithmGuide,
   onOpenMapSettings,
   tileProvider
 }) => {
   return (
-    <header className="h-16 px-4 md:px-6 bg-[#080c14]/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between z-20 sticky top-0">
+    <header className="h-16 px-4 md:px-8 bg-white/85 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between z-30 sticky top-0 shadow-2xs">
       {/* Brand & Project Identity */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-400 p-0.5 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.35)]">
-          <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-            <Bus className="w-5 h-5 text-cyan-400" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 p-0.5 flex items-center justify-center shadow-md shadow-blue-500/20">
+          <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+            <Bus className="w-5 h-5 text-blue-600" />
           </div>
         </div>
         
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base md:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-              PUNE <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">PMPML</span> PULSE
+            <h1 className="text-base md:text-lg font-extrabold tracking-tight text-slate-900 flex items-center gap-1.5">
+              PUNE <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">TRANSIT</span> PULSE
             </h1>
-            <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-950/70 text-cyan-300 border border-cyan-800/60">
-              AI Transit Optimizer
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+              <Sparkles className="w-2.5 h-2.5" /> PMPML + Metro
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 hidden sm:block">
-            Adaptive Graph Optimization &amp; Crowd Bottleneck Bypass for Pune City
+          <p className="text-[11px] text-slate-500 hidden md:block font-medium">
+            Smart Commute &amp; Congestion Avoidance Platform
           </p>
         </div>
       </div>
 
-      {/* Action Controls */}
-      <div className="flex items-center gap-2 md:gap-3">
-        {/* Map Source & API Key settings button */}
+      {/* Action Controls & Navigation Pills */}
+      <div className="flex items-center gap-2 md:gap-2.5">
+        {/* Pune Metro Toggle */}
         <button
           onClick={() => {
             sound.playClick();
-            onOpenMapSettings();
+            onToggleMetro();
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-cyan-500/50 transition-all"
-          title="Change Map Provider & API Key"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+            showMetro
+              ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-xs'
+              : 'bg-white text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-50'
+          }`}
+          title="Toggle Pune Metro Rail Network"
         >
-          <Map className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="hidden lg:inline capitalize">Tiles: {tileProvider}</span>
-          <span className="lg:hidden">Map</span>
+          <Train className="w-3.5 h-3.5 text-purple-600" />
+          <span className="hidden sm:inline">Pune Metro</span>
         </button>
 
         {/* Heatmap Toggle */}
@@ -72,32 +79,32 @@ export const Header: React.FC<HeaderProps> = ({
             sound.playClick();
             onToggleHeatmap();
           }}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
             showHeatmap
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_12px_rgba(239,68,68,0.2)]'
-              : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+              ? 'bg-rose-50 text-rose-700 border-rose-200 shadow-xs'
+              : 'bg-white text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-50'
           }`}
           title="Toggle Crowd Density Heatmap"
         >
-          <Flame className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Heatmap</span>
+          <Flame className="w-3.5 h-3.5 text-rose-500" />
+          <span className="hidden sm:inline">Heatmap</span>
         </button>
 
-        {/* Corridors Toggle */}
+        {/* Corridors Grid Toggle */}
         <button
           onClick={() => {
             sound.playClick();
             onToggleCorridors();
           }}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
             showAllCorridors
-              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]'
-              : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+              ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-xs'
+              : 'bg-white text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-50'
           }`}
-          title="Toggle Road Network Network Grid"
+          title="Toggle Road Network Grid"
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Network Grid</span>
+          <Layers className="w-3.5 h-3.5 text-blue-600" />
+          <span className="hidden lg:inline">Network Grid</span>
         </button>
 
         {/* Sound Toggle */}
@@ -106,10 +113,10 @@ export const Header: React.FC<HeaderProps> = ({
             onToggleSound();
             sound.playClick();
           }}
-          className={`p-2 rounded-lg text-xs transition-colors border ${
+          className={`p-2 rounded-xl text-xs transition-colors border ${
             soundEnabled
-              ? 'bg-slate-900 text-cyan-400 border-slate-800 hover:bg-slate-800'
-              : 'bg-slate-900 text-slate-500 border-slate-800 hover:bg-slate-800'
+              ? 'bg-blue-50 text-blue-600 border-blue-200'
+              : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
           }`}
           title={soundEnabled ? 'Mute Sound Effects' : 'Enable Sound Effects'}
         >
@@ -122,9 +129,9 @@ export const Header: React.FC<HeaderProps> = ({
             sound.playClick();
             onOpenAlgorithmGuide();
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-500/10 to-emerald-500/10 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/60 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm hover:shadow-md active:scale-95"
         >
-          <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+          <BookOpen className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Project Guide &amp; Viva</span>
           <span className="sm:hidden">Docs</span>
         </button>

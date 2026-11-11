@@ -1,0 +1,218 @@
+{
+  "model_name": "PuneTransitCrowdPredictor_v1",
+  "model_type": "Multi-Factor Calibrated Regression Forest",
+  "version": "1.0.0",
+  "accuracy_mae": 0.042,
+  "baseline_crowd": 0.663,
+  "hourly_crowd_curve": [
+    0.1,
+    0.08,
+    0.05,
+    0.05,
+    0.12,
+    0.25,
+    0.45,
+    0.78,
+    0.98,
+    0.92,
+    0.7,
+    0.55,
+    0.48,
+    0.45,
+    0.5,
+    0.62,
+    0.82,
+    0.96,
+    0.98,
+    0.88,
+    0.68,
+    0.45,
+    0.3,
+    0.18
+  ],
+  "weather_multipliers": {
+    "clear": 0.992,
+    "cloudy": 0.996,
+    "light_rain": 1.019,
+    "heavy_monsoon": 1.129,
+    "waterlogging": 1.087,
+    "extreme_heat": 0.872
+  },
+  "festival_multipliers": {
+    "none": 0.988,
+    "ganeshotsav": 1.156,
+    "palkhi": 1.055,
+    "diwali": 1.061,
+    "new_year": 1.067,
+    "eid": 1.0
+  },
+  "day_of_week_multipliers": [
+    0.904,
+    1.004,
+    1.028,
+    1.015,
+    1.028,
+    1.038,
+    0.975
+  ],
+  "category_factors": {
+    "Airport & Commercial": {
+      "weekday_weight": 1.037,
+      "weekend_weight": 1.047
+    },
+    "PCMC Western Gateway": {
+      "weekday_weight": 0.944,
+      "weekend_weight": 0.936
+    },
+    "Industrial Anchor": {
+      "weekday_weight": 1.023,
+      "weekend_weight": 1.083
+    },
+    "Commercial & Cantonment": {
+      "weekday_weight": 0.975,
+      "weekend_weight": 0.974
+    },
+    "Southern Central Gateway": {
+      "weekday_weight": 1.215,
+      "weekend_weight": 1.152
+    },
+    "Intermodal Gateway": {
+      "weekday_weight": 1.07,
+      "weekend_weight": 1.262
+    },
+    "Eastern IT Corridor": {
+      "weekday_weight": 1.048,
+      "weekend_weight": 0.436
+    },
+    "Urban Hub": {
+      "weekday_weight": 0.865,
+      "weekend_weight": 0.962
+    },
+    "Commercial Hub": {
+      "weekday_weight": 0.99,
+      "weekend_weight": 1.21
+    },
+    "Western Residential Hub": {
+      "weekday_weight": 0.928,
+      "weekend_weight": 0.967
+    },
+    "Eastern Terminal & BRT": {
+      "weekday_weight": 1.144,
+      "weekend_weight": 1.123
+    },
+    "Southern Terminal & BRT": {
+      "weekday_weight": 0.985,
+      "weekend_weight": 0.891
+    },
+    "IT Cybercity Hub": {
+      "weekday_weight": 1.045,
+      "weekend_weight": 0.413
+    },
+    "Highway Intermodal": {
+      "weekday_weight": 1.009,
+      "weekend_weight": 0.927
+    },
+    "Arterial Connector": {
+      "weekday_weight": 0.939,
+      "weekend_weight": 0.827
+    },
+    "Major Chokepoint": {
+      "weekday_weight": 1.148,
+      "weekend_weight": 1.184
+    },
+    "Highway Multi-Tier Junction": {
+      "weekday_weight": 0.961,
+      "weekend_weight": 1.036
+    },
+    "IT Corridor Chokepoint": {
+      "weekday_weight": 1.107,
+      "weekend_weight": 0.5
+    },
+    "High Density Residential": {
+      "weekday_weight": 1.021,
+      "weekend_weight": 0.981
+    },
+    "IT Corridor Hub": {
+      "weekday_weight": 1.071,
+      "weekend_weight": 0.447
+    },
+    "Central City Terminal": {
+      "weekday_weight": 0.988,
+      "weekend_weight": 1.142
+    },
+    "Central Terminal & Metro": {
+      "weekday_weight": 1.077,
+      "weekend_weight": 1.041
+    },
+    "Arterial Corridor": {
+      "weekday_weight": 0.924,
+      "weekend_weight": 0.944
+    },
+    "Nagar Road Anchor": {
+      "weekday_weight": 1.051,
+      "weekend_weight": 0.962
+    }
+  },
+  "hub_baselines": {
+    "hinjewadi_ph3": 0.607,
+    "hinjewadi_ph1": 0.624,
+    "wakad_bridge": 0.654,
+    "baner_phata": 0.617,
+    "aundh_chowk": 0.589,
+    "pune_university": 0.768,
+    "shivajinagar": 0.708,
+    "manapa_pmc": 0.687,
+    "deccan_gymkhana": 0.702,
+    "pune_station": 0.743,
+    "swargate": 0.793,
+    "katraj_depot": 0.636,
+    "hadapsar_gadital": 0.754,
+    "magarpatta_city": 0.576,
+    "viman_nagar": 0.69,
+    "kharadi_bypass": 0.575,
+    "kothrud_depot": 0.623,
+    "chandani_chowk": 0.652,
+    "warje_bridge": 0.602,
+    "sinhagad_road": 0.67,
+    "camp_pulgate": 0.646,
+    "yerawada_chowk": 0.677,
+    "bhosari_terminal": 0.689,
+    "nigdi_shakti": 0.625
+  },
+  "festival_hotspots": {
+    "ganeshotsav": [
+      "swargate",
+      "deccan_gymkhana",
+      "manapa_pmc",
+      "shivajinagar",
+      "camp_pulgate"
+    ],
+    "palkhi": [
+      "swargate",
+      "hadapsar_gadital",
+      "pune_station",
+      "camp_pulgate",
+      "manapa_pmc"
+    ],
+    "diwali": [
+      "viman_nagar",
+      "deccan_gymkhana",
+      "camp_pulgate",
+      "swargate",
+      "kothrud_depot"
+    ],
+    "new_year": [
+      "viman_nagar",
+      "camp_pulgate",
+      "deccan_gymkhana",
+      "magarpatta_city"
+    ]
+  },
+  "monsoon_flood_vulnerable_nodes": [
+    "pune_university",
+    "wakad_bridge",
+    "yerawada_chowk",
+    "aundh_chowk",
+    "warje_bridge"
+  ]
+}

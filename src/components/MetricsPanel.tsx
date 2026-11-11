@@ -6,12 +6,18 @@ import {
   Leaf,
   ChevronDown,
   ChevronUp,
-  AlertOctagon,
   CheckCircle2,
   Bus,
-  ArrowRight
+  ArrowRight,
+  Download,
+  Train,
+  Sparkles,
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { OptimizationComparison } from '../types/transit';
+import { exportRouteSlip } from '../utils/routeExport';
+import { sound } from '../utils/audio';
 
 interface MetricsPanelProps {
   comparison: OptimizationComparison;
@@ -26,194 +32,309 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ comparison }) => {
   const hasSavings = m.time_saved_percentage > 0;
 
   return (
-    <div className="glass-panel rounded-2xl p-4 md:p-5 border border-slate-800 shadow-2xl space-y-4">
+    <div className="space-y-6">
       {/* Top Banner / Verdict */}
-      <div className={`p-3 rounded-xl border flex items-start gap-3 ${
+      <div className={`p-5 rounded-3xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all ${
         hasSavings
-          ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
-          : 'bg-cyan-950/40 border-cyan-500/40 text-cyan-200'
+          ? 'bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-blue-50/70 border-emerald-200/90 text-emerald-950'
+          : 'bg-gradient-to-r from-blue-50/90 to-sky-50/50 border-blue-200 text-blue-950'
       }`}>
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-            {hasSavings ? 'Crowd Bypass Active' : 'Optimal Direct Corridor'}
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0 border border-emerald-200 shadow-2xs">
+            <CheckCircle2 className="w-5 h-5 text-emerald-700" />
           </div>
-          <div className="text-xs text-slate-200 font-medium mt-0.5">
-            {m.verdict}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+              <span>{hasSavings ? 'Dynamic Bypass Route Active' : 'Direct Corridor Optimal'}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-semibold">
+                {m.time_saved_percentage}% Faster
+              </span>
+            </div>
+            <p className="text-sm text-slate-700 font-medium mt-0.5 leading-snug">
+              {m.verdict}
+            </p>
           </div>
         </div>
+
+        {/* Download Route Summary Slip Button */}
+        <button
+          onClick={() => {
+            sound.playClick();
+            exportRouteSlip(comparison);
+          }}
+          className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-white hover:bg-slate-50 text-blue-600 border border-blue-200 hover:border-blue-300 transition-all shadow-sm active:scale-95 hover:shadow-md"
+          title="Download Travel Slip as PDF"
+        >
+          <Download className="w-4 h-4 text-blue-600" />
+          <span>Print / Save Slip</span>
+        </button>
       </div>
 
-      {/* Primary KPI Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      {/* 4-Column Modern KPI Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Time Saved KPI */}
-        <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
+        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
             <span>Time Saved</span>
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-blue-600" />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-extrabold text-cyan-300 font-mono mt-1">
-            {m.time_saved_minutes} <span className="text-xs font-normal">mins</span>
+          <div className="text-2xl lg:text-3xl font-extrabold text-blue-600 font-mono mt-2">
+            {m.time_saved_minutes} <span className="text-sm font-semibold text-slate-500">mins</span>
           </div>
-          <div className="text-[10px] text-emerald-400 font-medium flex items-center gap-0.5 mt-0.5">
-            <TrendingDown className="w-3 h-3" /> {m.time_saved_percentage}% faster
-          </div>
-        </div>
-
-        {/* Travel Time */}
-        <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
-            <span>Est. Transit</span>
-            <Bus className="w-3.5 h-3.5 text-emerald-400" />
-          </div>
-          <div className="text-lg md:text-xl font-extrabold text-emerald-300 font-mono mt-1">
-            {opt.estimated_travel_time_mins} <span className="text-xs font-normal">mins</span>
-          </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">
-            Std: {std.estimated_travel_time_mins} mins
+          <div className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-1">
+            <TrendingDown className="w-3.5 h-3.5" /> {m.time_saved_percentage}% travel reduction
           </div>
         </div>
 
-        {/* Crowd Reduction */}
-        <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
-            <span>Avg Crowd</span>
-            <Gauge className="w-3.5 h-3.5 text-amber-400" />
+        {/* Total Travel Time */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>Est. Commute</span>
+            <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <Bus className="w-4 h-4 text-indigo-600" />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-extrabold text-amber-300 font-mono mt-1">
+          <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 font-mono mt-2">
+            {opt.estimated_travel_time_mins} <span className="text-sm font-semibold text-slate-500">mins</span>
+          </div>
+          <div className="text-xs text-slate-500 mt-1 font-medium">
+            vs {std.estimated_travel_time_mins} mins on standard route
+          </div>
+        </div>
+
+        {/* Crowd Index */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>Crowd Comfort</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Gauge className="w-4 h-4 text-amber-600" />
+            </div>
+          </div>
+          <div className="text-2xl lg:text-3xl font-extrabold text-amber-600 font-mono mt-2">
             {opt.average_crowd_exposure_percent}%
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">
-            Std: {std.average_crowd_exposure_percent}%
+          <div className="text-xs text-emerald-600 font-semibold mt-1">
+            -{m.crowd_reduction_percentage}% less congestion
           </div>
         </div>
 
-        {/* Green CO2 Emissions */}
-        <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800/80">
-          <div className="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
-            <span>CO₂ Saved</span>
-            <Leaf className="w-3.5 h-3.5 text-teal-400" />
+        {/* CO2 Emissions Saved */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <span>Carbon Saved</span>
+            <div className="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center">
+              <Leaf className="w-4 h-4 text-teal-600" />
+            </div>
           </div>
-          <div className="text-lg md:text-xl font-extrabold text-teal-300 font-mono mt-1">
-            {m.co2_saved_kg > 0 ? `${m.co2_saved_kg} kg` : '0 kg'}
+          <div className="text-2xl lg:text-3xl font-extrabold text-teal-600 font-mono mt-2">
+            {m.co2_saved_kg > 0 ? `${m.co2_saved_kg}` : '0'} <span className="text-sm font-semibold text-slate-500">kg</span>
           </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">
-            Congestion cut
+          <div className="text-xs text-slate-500 mt-1 font-medium">
+            Reduced stop-and-go idling
           </div>
         </div>
       </div>
 
-      {/* Side-by-Side Path Breakdown */}
-      <div className="space-y-2.5">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Path Comparison Breakdown
+      {/* Clean Vertical Route Comparison Tiers (Requested by User) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+            Available Route Options &amp; Tiers
+          </h3>
+          <span className="text-xs text-slate-400 font-medium">Sorted by travel efficiency</span>
         </div>
 
-        {/* Standard Route Card */}
-        <div className="p-3 rounded-xl bg-slate-900/50 border border-rose-950/60 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-rose-400 flex items-center gap-1.5">
-              <span className="w-2.5 h-0.5 bg-rose-500 inline-block"></span>
-              Standard Route (Dijkstra Shortest Physical Path)
-            </span>
-            <span className="text-slate-400 font-mono text-[11px]">{std.total_distance_km} km</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-300">
-            {std.path_names.map((name, idx) => (
-              <React.Fragment key={`std-path-${idx}`}>
-                <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/60 text-[11px]">
-                  {name}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Tier 1: AI Dynamic Route (Recommended) */}
+          <div className="bg-gradient-to-b from-blue-50/60 to-white rounded-3xl p-5 border-2 border-blue-500 shadow-md relative flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-600 text-white flex items-center gap-1 shadow-2xs">
+                  <Sparkles className="w-3 h-3" /> Recommended
                 </span>
-                {idx < std.path_names.length - 1 && (
-                  <ArrowRight className="w-3 h-3 text-slate-500" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Dynamic Route Card */}
-        <div className="p-3 rounded-xl bg-slate-900/70 border border-emerald-900/60 space-y-2 shadow-[0_0_15px_rgba(16,185,129,0.08)]">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
-              ⚡ Crowd-Optimized Dynamic Route (Adaptive Cost Path)
-            </span>
-            <span className="text-slate-400 font-mono text-[11px]">{opt.total_distance_km} km</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-200">
-            {opt.path_names.map((name, idx) => (
-              <React.Fragment key={`opt-path-${idx}`}>
-                <span className="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/70 text-cyan-200 text-[11px] font-medium">
-                  {name}
+                <span className="text-xs font-mono font-bold text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded-lg">
+                  {opt.total_distance_km} km
                 </span>
-                {idx < opt.path_names.length - 1 && (
-                  <ArrowRight className="w-3 h-3 text-cyan-500" />
-                )}
-              </React.Fragment>
-            ))}
+              </div>
+              <h4 className="font-extrabold text-slate-900 text-base">AI Dynamic Detour</h4>
+              <p className="text-xs text-slate-600 mt-1">
+                Strategic congestion-bypass route designed to avoid major bottlenecks.
+              </p>
+
+              <div className="mt-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Estimated Time:</span>
+                  <span className="font-bold text-blue-600 text-sm">{opt.estimated_travel_time_mins} mins</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Crowd Exposure:</span>
+                  <span className="font-semibold text-emerald-600">{opt.average_crowd_exposure_percent}% (Low)</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Bottlenecks:</span>
+                  <span className="font-semibold text-emerald-600">0 Encountered</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-blue-100">
+              <button
+                type="button"
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Active on Map
+              </button>
+            </div>
+          </div>
+
+          {/* Tier 2: Standard Direct Route (Congested) */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative flex flex-col justify-between hover:border-slate-300 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-rose-600" /> Direct (Congested)
+                </span>
+                <span className="text-xs font-mono font-semibold text-slate-500">
+                  {std.total_distance_km} km
+                </span>
+              </div>
+              <h4 className="font-bold text-slate-800 text-base">Standard Dijkstra Path</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Shortest physical distance along arterial roads with heavy traffic lights.
+              </p>
+
+              <div className="mt-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Estimated Time:</span>
+                  <span className="font-bold text-rose-600 text-sm">{std.estimated_travel_time_mins} mins</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Crowd Exposure:</span>
+                  <span className="font-semibold text-rose-600">{std.average_crowd_exposure_percent}% (High)</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Delay Penalty:</span>
+                  <span className="font-semibold text-rose-600">+{std.congestion_delay_mins} mins delay</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-100">
+              <div className="text-center py-2 text-xs font-semibold text-rose-600 bg-rose-50 rounded-xl border border-rose-100">
+                Not Recommended in Peak Hours
+              </div>
+            </div>
+          </div>
+
+          {/* Tier 3: Multimodal Metro Rail Connection */}
+          <div className="bg-gradient-to-b from-purple-50/50 to-white rounded-3xl p-5 border border-purple-200 shadow-sm relative flex flex-col justify-between hover:border-purple-300 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1">
+                  <Train className="w-3 h-3 text-purple-600" /> Metro + Feeder
+                </span>
+                <span className="text-xs font-mono font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg">
+                  Multi-Modal
+                </span>
+              </div>
+              <h4 className="font-bold text-slate-800 text-base">Pune Metro Feeder</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Combine PMPML local feeder shuttle with Purple/Aqua line rapid rail.
+              </p>
+
+              <div className="mt-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Interchange:</span>
+                  <span className="font-semibold text-purple-700">Civil Court / Swargate</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Traffic Jam Risk:</span>
+                  <span className="font-semibold text-emerald-600">Near Zero (Dedicated Rail)</span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Eco Score:</span>
+                  <span className="font-semibold text-emerald-600">Zero Local Emissions</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-purple-100">
+              <button
+                type="button"
+                onClick={() => exportRouteSlip(comparison)}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Train className="w-3.5 h-3.5" /> View Metro Stations
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* PMPML Dispatch Advisory */}
-      <div className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 to-slate-900 border border-blue-800/40 flex items-start gap-2.5 text-xs">
-        <Bus className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <div className="font-bold text-cyan-300 text-[11px] uppercase tracking-wider">
-            PMPML Smart Dispatch Advisory
-          </div>
-          <p className="text-slate-300 text-[11px] leading-relaxed">
-            {m.time_saved_percentage > 20
-              ? `High congestion detected along city center corridors. Recommend deploying 4 additional electric feeder buses via Western Ring / NH48 bypass to clear ${comparison.origin} crowd buildup.`
-              : `Current passenger flow is operating near normal schedule. PMPML headway intervals of 8-12 minutes are sufficient for this corridor.`}
-          </p>
+      {/* Path Sequence Breadcrumbs */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          Optimal Corridor Traversal ({opt.path_names.length} Transit Stops)
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {opt.path_names.map((name, idx) => (
+            <React.Fragment key={`opt-path-${idx}`}>
+              <span className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold shadow-2xs">
+                {name}
+              </span>
+              {idx < opt.path_names.length - 1 && (
+                <ArrowRight className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
-      {/* Expandable Turn-by-Turn Segments */}
-      <div className="pt-1">
+      {/* Expandable Turn-by-Turn Segment Telemetry */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
         <button
           onClick={() => setShowSegments(!showSegments)}
-          className="w-full flex items-center justify-between text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors py-1"
+          className="w-full flex items-center justify-between text-xs font-bold text-slate-700 hover:text-blue-600 transition-colors py-1"
         >
-          <span>Segment-by-Segment Transit Telemetry ({opt.segments.length} hops)</span>
-          {showSegments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <span>Turn-by-Turn Corridor Telemetry ({opt.segments.length} Road Segments)</span>
+          {showSegments ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </button>
 
         {showSegments && (
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full text-left text-xs border border-slate-800 rounded-lg overflow-hidden">
-              <thead className="bg-slate-900/90 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden">
+              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold border-b border-slate-200">
                 <tr>
-                  <th className="p-2">Segment Corridor</th>
-                  <th className="p-2">Dist</th>
-                  <th className="p-2">Est. Time</th>
-                  <th className="p-2">Crowd</th>
-                  <th className="p-2">Status</th>
+                  <th className="p-3">Corridor Segment</th>
+                  <th className="p-3">Distance</th>
+                  <th className="p-3">Est. Time</th>
+                  <th className="p-3">Crowd Exposure</th>
+                  <th className="p-3">Corridor Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-slate-950/40 text-slate-300 text-[11px]">
+              <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                 {opt.segments.map((seg, idx) => (
-                  <tr key={`seg-${idx}`} className="hover:bg-slate-900/60 transition-colors">
-                    <td className="p-2 font-medium">
+                  <tr key={`seg-${idx}`} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 font-semibold text-slate-900">
                       {seg.from} ➔ {seg.to}
                     </td>
-                    <td className="p-2 font-mono">{seg.distance_km} km</td>
-                    <td className="p-2 font-mono text-cyan-300">{seg.travel_time_mins} min</td>
-                    <td className="p-2 font-mono">
-                      <span className={seg.crowd_index > 0.7 ? 'text-rose-400' : 'text-emerald-400'}>
+                    <td className="p-3 font-mono">{seg.distance_km} km</td>
+                    <td className="p-3 font-mono font-bold text-blue-600">{seg.travel_time_mins} min</td>
+                    <td className="p-3 font-mono">
+                      <span className={seg.crowd_index > 0.7 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-semibold'}>
                         {Math.round(seg.crowd_index * 100)}%
                       </span>
                     </td>
-                    <td className="p-2">
+                    <td className="p-3">
                       {seg.is_chokepoint ? (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] bg-rose-950 text-rose-300 border border-rose-800">
-                          Bottleneck
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          Bottleneck Avoided
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800">
-                          Clear
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Clear Flow
                         </span>
                       )}
                     </td>

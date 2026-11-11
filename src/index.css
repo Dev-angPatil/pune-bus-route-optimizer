@@ -4,48 +4,62 @@
 
 @layer base {
   body {
-    @apply bg-[#080c14] text-slate-100 antialiased selection:bg-cyan-500 selection:text-black;
+    @apply bg-[#F8FAFC] text-slate-800 antialiased selection:bg-blue-600 selection:text-white;
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Minimal Clean Gray */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #080c14;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
 
-/* Leaflet Container & Dark styling */
+/* Leaflet Container & Clean Light Canvas */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #080c14 !important;
+  background: #f1f5f9 !important;
   font-family: inherit;
 }
 
-/* OpenStreetMap Dark Neon Theme (100% Free, Zero API Keys, Zero Watermarks) */
-.osm-dark-tiles .leaflet-tile {
-  filter: brightness(0.6) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.3) brightness(0.75) !important;
-}
-
-/* Clean Unfiltered Tiles */
+/* Crisp Modern Light Map Tiles */
 .clean-tiles .leaflet-tile {
-  filter: none !important;
+  filter: contrast(1.03) saturate(1.05) brightness(1.01) !important;
 }
 
-/* Custom animated dashed route */
+.osm-light-tiles .leaflet-tile {
+  filter: contrast(1.05) brightness(1.02) saturate(1.05) !important;
+}
+
+/* 3D Map Perspective Tilt */
+.map-container-3d {
+  perspective: 1200px;
+}
+
+.map-container-3d .leaflet-pane {
+  transform: rotateX(24deg) scale(1.05) translateY(-18px) !important;
+  transform-origin: 50% 60% !important;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.leaflet-pane {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Flowing Electric Blue Route Animation */
 @keyframes flowDash {
   to {
-    stroke-dashoffset: -40;
+    stroke-dashoffset: -36;
   }
 }
 
@@ -54,71 +68,77 @@
 }
 
 .animated-route-pulse {
-  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8));
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.35));
 }
 
 .animated-congested-route {
   stroke-dasharray: 6 6;
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
-/* Glowing Pulsing Markers */
-.node-marker-pulse {
-  position: relative;
-}
-
-.node-marker-pulse::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  opacity: 0.6;
-  animation: markerPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-@keyframes markerPing {
-  75%, 100% {
-    transform: scale(2.2);
-    opacity: 0;
+/* Moving Commuter Crowd Flow Particles */
+@keyframes crowdParticleFlow {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
-/* Leaflet Popup & Controls */
+.animated-crowd-dots {
+  stroke-dasharray: 4 16;
+  stroke-linecap: round;
+  animation: crowdParticleFlow 1.6s linear infinite;
+}
+
+/* Leaflet Popups - Clean White Glassmorphism */
 .leaflet-popup-content-wrapper {
-  background: #0f172a !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #1e293b !important;
-  border-radius: 12px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
-  padding: 4px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
+  padding: 6px !important;
 }
 
 .leaflet-popup-tip {
-  background: #0f172a !important;
-  border: 1px solid #1e293b !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .leaflet-control-zoom a {
-  background: #0f172a !important;
-  color: #38bdf8 !important;
-  border: 1px solid #1e293b !important;
+  background: #ffffff !important;
+  color: #2563eb !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
 }
 .leaflet-control-zoom a:hover {
-  background: #1e293b !important;
-  color: #e0f2fe !important;
+  background: #f8fafc !important;
+  color: #1d4ed8 !important;
 }
 
-.glass-panel {
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Premium Light Cards & Glassmorphism */
+.light-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
-.glass-panel-glow {
-  box-shadow: 0 0 35px -5px rgba(6, 182, 212, 0.15);
+.light-glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+}
+
+.light-card-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.light-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+  border-color: #93c5fd;
 }
