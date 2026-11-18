@@ -1,0 +1,11 @@
+# C++ Build Artifacts
+*.o
+*.a
+*.so
+pune_route_cli
+pune_route_optimizer
+.qmake.stash
+moc_*.cpp
+moc_*.o
+moc_predefs.h
+Makefile.qt

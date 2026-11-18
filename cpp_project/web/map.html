@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pune Transit Real Map</title>
+  <link rel="stylesheet" href="leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .leaflet-popup-content-wrapper {
+      background: #1f2937;
+      color: #f3f4f6;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    }
+    .leaflet-popup-tip {
+      background: #1f2937;
+    }
+    .stop-popup h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #38bdf8;
+    }
+    .stop-popup p {
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .popup-btn-row {
+      display: flex;
+      gap: 6px;
+    }
+    .popup-btn {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-origin {
+      background: #10b981;
+      color: #ffffff;
+    }
+    .btn-origin:hover { background: #059669; }
+    .btn-dest {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .btn-dest:hover { background: #dc2626; }
+    .map-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid #374151;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #e5e7eb;
+      font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="map-badge" id="map-status">🚍 Pune PMPML Real Transit Map</div>
+
+  <script src="leaflet.js"></script>
+  <script src="qwebchannel.js"></script>
+  <script>
+    let map = null;
+    let stopMarkers = {};
+    let networkLayer = null;
+    let routeLayer = null;
+    let qtBridge = null;
+
+    // Connect to Qt QWebChannel if available
+    if (typeof QWebChannel !== 'undefined') {
+      new QWebChannel(qt.webChannelTransport, function (channel) {
+        qtBridge = channel.objects.bridge;
+      });
+    }
+
+    function initMap() {
+      // Center on Pune
+      map = L.map('map', {
+        center: [18.5204, 73.8567],
+        zoom: 12,
+        zoomControl: true
+      });
+
+      // CartoDB Dark Matter tiles (fallback to standard OSM if dark is blocked)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      networkLayer = L.layerGroup().addTo(map);
+      routeLayer = L.layerGroup().addTo(map);
+    }
+
+    function notifyQt(action, stopId) {
+      if (qtBridge && qtBridge.onStopClicked) {
+        qtBridge.onStopClicked(action, stopId);
+      } else if (window.qtBridgeHandler) {
+        window.qtBridgeHandler(action, stopId);
+      }
+    }
+
+    function setTransitNetwork(stops, edges) {
+      if (!map) initMap();
+      networkLayer.clearLayers();
+      routeLayer.clearLayers();
+      stopMarkers = {};
+
+      // 1. Draw base road corridors
+      edges.forEach(e => {
+        if (e.polyline && e.polyline.length > 1) {
+          L.polyline(e.polyline, {
+            color: '#475569',
+            weight: 3,
+            opacity: 0.65,
+            dashArray: '4, 4'
+          }).bindTooltip(`${e.road_name || 'Corridor'}: ${e.distance_km} km`, { sticky: true }).addTo(networkLayer);
+        }
+      });
+
+      // 2. Draw Stop Markers
+      stops.forEach(s => {
+        let marker = L.circleMarker([s.lat, s.lon], {
+          radius: 7,
+          fillColor: '#38bdf8',
+          color: '#ffffff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9
+        });
+
+        let popupContent = `
+          <div class="stop-popup">
+            <h3>${s.name}</h3>
+            <p>${s.category || 'Transit Stop'}<br><small>(${s.lat.toFixed(4)}, ${s.lon.toFixed(4)})</small></p>
+            <div class="popup-btn-row">
+              <button class="popup-btn btn-origin" onclick="notifyQt('origin', '${s.id}')">📍 Set Origin</button>
+              <button class="popup-btn btn-dest" onclick="notifyQt('destination', '${s.id}')">🎯 Set Destination</button>
+            </div>
+          </div>
+        `;
+        marker.bindPopup(popupContent);
+        marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -6] });
+        marker.addTo(networkLayer);
+        stopMarkers[s.id] = marker;
+      });
+
+      document.getElementById('map-status').innerText = `🚍 Pune Transit Map (${stops.length} stops, ${edges.length} corridors)`;
+    }
+
+    function displayRoute(routeData) {
+      if (!map) initMap();
+      routeLayer.clearLayers();
+
+      if (!routeData || !routeData.found) {
+        document.getElementById('map-status').innerText = 'No route found between endpoints';
+        return;
+      }
+
+      // Pick color by algorithm
+      let routeColor = '#10b981'; // Dijkstra emerald
+      if (routeData.algorithm_name.includes('A*')) routeColor = '#06b6d4'; // Cyan for A*
+      if (routeData.algorithm_name.includes('Bellman')) routeColor = '#f59e0b'; // Amber for Bellman-Ford
+
+      // Draw route polyline
+      if (routeData.polyline && routeData.polyline.length > 0) {
+        // Outer glowing shadow line
+        L.polyline(routeData.polyline, {
+          color: routeColor,
+          weight: 8,
+          opacity: 0.4
+        }).addTo(routeLayer);
+
+        // Core bright line
+        let mainLine = L.polyline(routeData.polyline, {
+          color: routeColor,
+          weight: 4,
+          opacity: 1.0
+        }).addTo(routeLayer);
+
+        map.fitBounds(mainLine.getBounds(), { padding: [40, 40] });
+      }
+
+      // Highlight Start Marker (Green)
+      if (routeData.path_ids && routeData.path_ids.length > 0) {
+        let startId = routeData.path_ids[0];
+        let endId = routeData.path_ids[routeData.path_ids.length - 1];
+
+        if (stopMarkers[startId]) {
+          let pos = stopMarkers[startId].getLatLng();
+          L.circleMarker(pos, {
+            radius: 11,
+            fillColor: '#10b981',
+            color: '#ffffff',
+            weight: 3,
+            fillOpacity: 1
+          }).bindPopup(`<b>ORIGIN:</b> ${stopMarkers[startId].getTooltip().getContent()}`).addTo(routeLayer).openPopup();
+        }
+
+        if (stopMarkers[endId]) {
+          let pos = stopMarkers[endId].getLatLng();
+          L.circleMarker(pos, {
+            radius: 11,
+            fillColor: '#ef4444',
+            color: '#ffffff',
+            weight: 3,
+            fillOpacity: 1
+          }).bindPopup(`<b>DESTINATION:</b> ${stopMarkers[endId].getTooltip().getContent()}`).addTo(routeLayer);
+        }
+      }
+
+      document.getElementById('map-status').innerText =
+        `⚡ ${routeData.algorithm_name}: ${routeData.total_distance_km} km | ${routeData.total_time_mins} mins | ${routeData.execution_time_us} µs`;
+    }
+
+    function clearRoute() {
+      if (routeLayer) routeLayer.clearLayers();
+      document.getElementById('map-status').innerText = 'Route cleared';
+    }
+
+    window.onload = function() {
+      initMap();
+    };
+  </script>
+</body>
+</html>

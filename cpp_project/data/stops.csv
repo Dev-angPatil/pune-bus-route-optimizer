@@ -1,0 +1,25 @@
+id,name,lat,lon,category,description
+hinjewadi_ph3,Hinjewadi Phase 3 (Maan),18.5772,73.6882,IT Corridor Hub,"Rajiv Gandhi Infotech Park Western Terminal. Major tech employee hub (Infosys, TCS, Wipro, Megapolis)."
+hinjewadi_ph1,Hinjewadi Shivaji Chowk (Phase 1),18.5913,73.7389,IT Corridor Chokepoint,Gateway to Hinjewadi IT park. Extreme bottleneck during morning (8:30-10:30 AM) and evening rush.
+wakad_bridge,Wakad Bridge / NH48 Junction,18.5986,73.7629,Highway Intermodal,"Key junction connecting Hinjewadi, Baner, PCMC, and Bangalore-Mumbai bypass highway."
+baner_phata,Baner / Balewadi Phata,18.5642,73.7768,Arterial Corridor,"Connects High Street, Balewadi Sports Complex and Pashan bypass."
+aundh_chowk,Aundh / Rajiv Gandhi Bridge,18.5583,73.8075,Urban Hub,High residential and commercial traffic corridor linking PCMC and Shivajinagar.
+pune_university,Pune University Chowk (SPPU),18.5412,73.829,Major Chokepoint,Ganeshkhind Road flyover junction. Historic bottleneck for commuters between West Pune and City Center.
+shivajinagar,Shivajinagar Bus Station & Railway,18.5314,73.8446,Central Terminal & Metro,"Central multi-modal interchange linking PMPML, suburban railway, MSRTC, and Pune Metro Aqua Line."
+manapa_pmc,PMC Bhavan (Ma Na Pa),18.5246,73.8529,Central City Terminal,PMC headquarters central depot; origin for over 70 city bus routes across Mutha river.
+deccan_gymkhana,Deccan Gymkhana (Goodluck Chowk),18.5168,73.843,Commercial Hub,Commercial heart of Pune on FC Road and Karve Road. High student and office commuter density.
+pune_station,Pune Railway Station Bus Terminal,18.5284,73.8738,Intermodal Gateway,Highest daily footfall gateway. Connects intercity express trains with round-the-clock PMPML fleet.
+swargate,Swargate Multi-Modal Hub,18.5018,73.8562,Southern Central Gateway,"Pune's biggest southern transport junction. PMPML depot, MSRTC terminal, and underground Metro terminus."
+katraj_depot,Katraj Bus Depot & Snake Park,18.4491,73.8569,Southern Terminal & BRT,Southern BRT terminal anchor on Pune-Satara Road. Major residential and educational catchment.
+hadapsar_gadital,Hadapsar Gadital Terminal,18.5024,73.926,Eastern Terminal & BRT,"Eastern gateway connecting Solapur Highway, Magarpatta Cybercity, and SP Infocity."
+magarpatta_city,Magarpatta City (Tower Chowk),18.5144,73.9288,IT Cybercity Hub,Eastern IT park with heavy daily tech commuter transit demand.
+viman_nagar,Viman Nagar / Phoenix Mall,18.5621,73.9168,Airport & Commercial,"Nagar Road BRT corridor, close to Pune International Airport and Symbiosis campus."
+kharadi_bypass,Kharadi Bypass / EON IT Park,18.5515,73.952,Eastern IT Corridor,"Major eastern tech corridor (EON IT Park, World Trade Center Pune) on Ahmednagar Highway."
+kothrud_depot,Kothrud Depot / Paud Road,18.5074,73.8077,Western Residential Hub,"Densely populated residential and college district (MIT, Cummins) with dedicated PMPML depot."
+chandani_chowk,Chandani Chowk / Bavdhan,18.5089,73.7824,Highway Multi-Tier Junction,"Western bypass interchange connecting Mumbai-Bangalore Highway, Paud Road, and Mulshi."
+warje_bridge,Warje Flyover / Mai Mangeshkar,18.4832,73.8016,Arterial Connector,"Connects Kothrud, Karvenagar, and Sinhagad Road via the bypass highway."
+sinhagad_road,Sinhagad Road / Anand Nagar,18.4735,73.8247,High Density Residential,One of Pune's most congested radial arterial corridors connecting Dhayari and Swargate.
+camp_pulgate,Camp / Pulgate Stand,18.5097,73.8829,Commercial & Cantonment,"Pune Cantonment central terminal connecting East Pune, Kondhwa, and Pune Station."
+yerawada_chowk,Yerawada / Bund Garden Bridge,18.5528,73.8837,Nagar Road Anchor,"Bridge crossing over Mula-Mutha river connecting Station, Koregaon Park, and Nagar Road BRT."
+bhosari_terminal,Bhosari Bus Terminal (PCMC),18.6273,73.8458,Industrial Anchor,"Northern industrial spine on Pune-Nashik highway, serving auto hubs (Tata Motors, MIDC)."
+nigdi_shakti,Nigdi Bhakti Shakti Terminal,18.654,73.7656,PCMC Western Gateway,Old Mumbai-Pune Highway terminus. Major origin for BRT corridors into Pune city.
