@@ -1,0 +1,29 @@
+name: C++ Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compile Standalone CLI (C++17)
+        run: make cli
+
+      - name: Test Single Route Calculation (Dijkstra)
+        run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --algo dijkstra
+
+      - name: Test Heuristic Route Calculation (A*)
+        run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --algo astar
+
+      - name: Test Dynamic Programming Route (Bellman-Ford)
+        run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --algo bellman
+
+      - name: Test 3-Algorithm Side-by-Side Comparison
+        run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --compare
