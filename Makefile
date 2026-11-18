@@ -10,7 +10,9 @@ CORE_SRCS = src/core/Graph.cpp \
             src/core/Dijkstra.cpp \
             src/core/AStar.cpp \
             src/core/BellmanFord.cpp \
-            src/core/Benchmark.cpp
+            src/core/Benchmark.cpp \
+            src/core/TrafficModel.cpp \
+            src/core/DeparturePlanner.cpp
 
 CLI_SRCS = src/cli/cli_main.cpp
 
@@ -34,7 +36,7 @@ help:
 # Target 1: Standalone CLI (Pure Standard C++17)
 cli: pune_route_cli
 
-pune_route_cli: $(CORE_SRCS) $(CLI_SRCS)
+pune_route_cli: $(CORE_SRCS) $(CLI_SRCS) src/core/*.h
 	@echo "[CXX] Compiling standalone CLI binary (pune_route_cli)..."
 	$(CXX) $(CXXFLAGS) $(CORE_SRCS) $(CLI_SRCS) -o pune_route_cli
 	@echo "[OK] Built pune_route_cli successfully!"
@@ -42,7 +44,7 @@ pune_route_cli: $(CORE_SRCS) $(CLI_SRCS)
 # Target 2: Desktop GUI with Real Map (Qt6)
 gui: pune_route_optimizer
 
-pune_route_optimizer: pune_router.pro $(CORE_SRCS) src/gui/gui_main.cpp src/gui/MainWindow.cpp src/gui/MainWindow.h src/gui/MapBridge.h
+pune_route_optimizer: pune_router.pro $(CORE_SRCS) src/core/*.h src/gui/gui_main.cpp src/gui/MainWindow.cpp src/gui/MainWindow.h src/gui/MapBridge.h
 	@echo "[Qt6] Generating Makefile from pune_router.pro..."
 	qmake6 pune_router.pro -o Makefile.qt
 	@echo "[Qt6] Compiling GUI application..."

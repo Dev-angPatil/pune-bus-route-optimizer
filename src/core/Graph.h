@@ -6,6 +6,10 @@
 #include <unordered_map>
 #include <cmath>
 
+class TrafficModel;
+struct DateTime;
+enum class TrafficMode;
+
 class Graph {
 public:
     Graph() = default;
@@ -33,6 +37,15 @@ public:
 
     // Reconstruct continuous GPS polyline for a path
     std::vector<std::pair<double, double>> reconstructPolyline(const std::vector<std::string>& path_ids) const;
+
+    // ---- Traffic prediction ----
+    // Sets every edge's traffic_factor using the chosen model at the given time.
+    // TrafficMode::Off resets all factors to 1.0 (free-flow).
+    void applyTraffic(const TrafficModel& model, TrafficMode mode, const DateTime& when);
+
+    // Fastest free-flow speed on any road (km/h). A* uses it to turn straight-line
+    // km into an optimistic (never over-estimated) number of minutes.
+    double maxFreeFlowSpeedKmph() const;
 
     // Clear all graph data
     void clear();

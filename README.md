@@ -58,6 +58,52 @@ Because the straight-line spherical distance is the shortest possible path betwe
 
 ---
 
+## 🚦 Traffic Prediction (Date & Time Aware Routing)
+
+Pick a departure date and time, and the optimizer **predicts congestion on every road** and finds the **fastest** route (instead of the shortest one).
+
+```
+predicted_time(edge) = base_time_mins × congestion_factor(road_type, date, time)
+```
+
+- `congestion_factor` is **1.0 on an empty road** and goes up to about 2.5× on Hinjewadi at 9 AM.
+- Every road in `routes.csv` has a `road_type`: `it_corridor`, `city_center`, `arterial` or `highway`.
+
+### Two prediction models (both learned from `data/traffic_history.csv`)
+
+| Model | How it works | Test error (MAE) |
+|:---|:---|:---|
+| No traffic (baseline) | Always predicts 1.0 | 0.328 |
+| **Historical Average** | Mean of past rows with the same (road type, weekday/weekend/holiday, hour) | **0.083** |
+| **Linear Regression** | `factor = w · x`, 9 yes/no features, trained with **Gradient Descent** | 0.117 (R² = 0.79) |
+
+The learned regression weights are readable on their own (`./pune_route_cli --model-info`):
+
+| Feature (0 or 1) | Weight |
+|:---|---:|
+| bias (always 1) | +1.011 |
+| daytime (6 AM – 10 PM) | +0.149 |
+| weekday morning rush (8–11 AM) | +0.441 |
+| weekday evening rush (5–9 PM) | +0.419 |
+| rush hour AND IT corridor | +0.502 |
+| rush hour AND city centre | +0.148 |
+| rush hour AND highway | −0.338 |
+| city centre road (daytime) | +0.200 |
+| monsoon month (Jun–Sep) | +0.148 |
+
+So on a weekday at 9 AM on an IT corridor: 1.011 + 0.149 + 0.441 + 0.502 = **2.10×** slower than an empty road.
+
+### About the data (please read)
+Real hourly Pune traffic data is not freely available, so `data/traffic_history.csv` is **synthetic**. `tools/generate_traffic_data.py` simulates 150 days of 2025 from known Pune patterns (rush hours, IT corridors, monsoon, holidays) plus random noise. The project demonstrates the **method**. Swap in real data with the same 4 columns and both models retrain automatically on start-up.
+
+### Features
+- **Fastest route at a given time:** e.g. Kothrud → Swargate goes through Deccan at 2 PM (41 min) but takes the Chandani Chowk / Warje bypass at 9 AM (57 min).
+- **Best time to leave:** tries every 30-minute departure slot of the day and charts the travel time.
+- **Congestion map:** roads coloured green / yellow / red by predicted traffic.
+- **Holidays:** `data/holidays.csv` (editable) marks days with lighter traffic.
+
+---
+
 ## 🚀 Quick Start & Compilation
 
 ### Prerequisites
@@ -98,6 +144,16 @@ make run
 
 # Single Algorithm Execution
 ./pune_route_cli --from swargate --to hinjewadi_ph3 --algo astar
+
+# Fastest route with predicted traffic (model: lr = regression, avg = average, off)
+./pune_route_cli --from kothrud_depot --to swargate --at "2026-11-18 09:00" --compare
+./pune_route_cli --from kothrud_depot --to swargate --at "2026-11-18 14:00" --model avg
+
+# Best time to leave over the whole day
+./pune_route_cli --from swargate --to hinjewadi_ph3 --at "2026-11-18" --best-departure
+
+# Show the trained model's weights and accuracy
+./pune_route_cli --model-info
 ```
 
 ---
@@ -108,8 +164,12 @@ make run
 cpp_project/
 ├── data/
 │   ├── stops.csv             # 24 Pune Hubs (ID, Name, Lat, Lon, Category)
-│   ├── routes.csv            # 38 Transit Corridors (Source, Target, Distance, Time)
-│   └── shapes.csv            # Road geometry coordinates for real map curves
+│   ├── routes.csv            # 38 Transit Corridors (Source, Target, Distance, Time, Road Type)
+│   ├── shapes.csv            # Road geometry coordinates for real map curves
+│   ├── traffic_history.csv   # 14,400 synthetic traffic observations (date, hour, road type, factor)
+│   └── holidays.csv          # Public holidays & festivals (lighter traffic)
+├── tools/
+│   └── generate_traffic_data.py # Regenerates traffic_history.csv (Python stdlib only)
 ├── src/
 │   ├── core/
 │   │   ├── Stop.h            # Stop data structure
@@ -119,12 +179,15 @@ cpp_project/
 │   │   ├── Dijkstra.h / .cpp # Dijkstra's algorithm (Min-Heap Greedy)
 │   │   ├── AStar.h / .cpp    # A* search algorithm (Heuristic)
 │   │   ├── BellmanFord.h / .cpp # Bellman-Ford algorithm (Dynamic Programming)
-│   │   └── Benchmark.h / .cpp   # 3-way side-by-side comparison engine
+│   │   ├── Benchmark.h / .cpp   # 3-way side-by-side comparison engine
+│   │   ├── TrafficModel.h / .cpp # Traffic prediction: Historical Average + Linear Regression
+│   │   └── DeparturePlanner.h / .cpp # "Best time to leave" day sweep
 │   ├── cli/
 │   │   └── cli_main.cpp      # Standalone Terminal interactive menu & runner
 │   └── gui/
 │       ├── gui_main.cpp      # GUI entry point
 │       ├── MainWindow.h / .cpp # Two-pane Qt6 window with KPI metrics & controls
+│       ├── DepartureChart.h  # Bar chart for "Best Time to Leave" (QPainter)
 │       └── MapBridge.h       # C++ to JavaScript WebChannel bridge
 ├── web/
 │   ├── map.html              # Embedded Leaflet OpenStreetMap frontend
@@ -161,6 +224,14 @@ cpp_project/
 > **Answer**:  
 > In any graph without negative cycles, the shortest path between any two vertices contains at most $|V| - 1$ edges. Thus, all shortest paths are finalized after $|V| - 1$ relaxation rounds.  
 > We run one extra pass (the $|V|$-th round). If any edge can still be relaxed (`dist[u] + w < dist[v]`), it proves that a cycle with negative total weight exists.
+
+---
+
+### Q6: How does the traffic prediction change the shortest-path algorithms?
+**Answer**: It doesn't change the algorithms at all, only the edge weights. We predict a congestion factor for each road at the departure time, multiply it by the free-flow time, and run the same Dijkstra / A* / Bellman-Ford on those minutes instead of kilometres.
+
+### Q7: Is A* still admissible with traffic?
+**Answer**: Yes. In time mode, $h(n) = \text{Haversine}(n, \text{target}) / v_{max}$, where $v_{max}$ is the fastest free-flow speed on the network. Factors are clamped to $\ge 1.0$, so no road can be faster than free-flow, and $h(n)$ never over-estimates.
 
 ---
 

@@ -27,3 +27,15 @@ jobs:
 
       - name: Test 3-Algorithm Side-by-Side Comparison
         run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --compare
+
+      - name: Test Traffic Model Training
+        run: ./pune_route_cli --model-info
+
+      - name: Test Traffic-Aware Routing (Rush Hour, Linear Regression)
+        run: ./pune_route_cli --from kothrud_depot --to swargate --at "2026-11-18 09:00" --compare
+
+      - name: Test Traffic-Aware Routing (Historical Average)
+        run: ./pune_route_cli --from kothrud_depot --to swargate --at "2026-11-18 14:00" --model avg
+
+      - name: Test Best Time to Leave
+        run: ./pune_route_cli --from swargate --to hinjewadi_ph3 --at "2026-11-18" --best-departure

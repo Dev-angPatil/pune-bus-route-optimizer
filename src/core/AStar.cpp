@@ -6,15 +6,18 @@
 
 RouteResult AStar::findShortestPath(const Graph& graph,
                                     const std::string& source_id,
-                                    const std::string& target_id) {
+                                    const std::string& target_id,
+                                    bool by_time) {
     RouteResult res;
     res.algorithm_name = "A* Search Algorithm";
     res.source_id = source_id;
     res.target_id = target_id;
+    res.optimized_for_time = by_time;
     res.paradigm = "Informed / Heuristic Search";
     res.time_complexity = "O((V + E) log V) - Pruned via Heuristic";
     res.space_complexity = "O(V)";
     res.notes = "Uses admissible Haversine distance heuristic h(n) towards target GPS coordinates.";
+    if (by_time) res.notes = "Optimizes travel time with traffic. h(n) = Haversine km / fastest free-flow speed (admissible).";
 
     if (!graph.hasStop(source_id) || !graph.hasStop(target_id)) {
         res.found = false;
@@ -29,6 +32,16 @@ RouteResult AStar::findShortestPath(const Graph& graph,
     }
 
     const Stop* target_stop = graph.getStop(target_id);
+
+    // Heuristic h(n): straight-line (Haversine) distance to the target.
+    // When optimising time, convert it to minutes at the FASTEST free-flow speed
+    // on the network. Since traffic factors are always >= 1.0, no real route can
+    // be faster than this, so h(n) never over-estimates -> still admissible.
+    const double max_speed_kmph = graph.maxFreeFlowSpeedKmph();
+    auto heuristic = [&](const Stop* s) {
+        double km = Graph::haversineDistance(s->lat, s->lon, target_stop->lat, target_stop->lon);
+        return by_time ? km / max_speed_kmph * 60.0 : km;
+    };
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -49,8 +62,7 @@ RouteResult AStar::findShortestPath(const Graph& graph,
 
     g_score[source_id] = 0.0;
     const Stop* source_stop = graph.getStop(source_id);
-    double h_start = Graph::haversineDistance(source_stop->lat, source_stop->lon,
-                                              target_stop->lat, target_stop->lon);
+    double h_start = heuristic(source_stop);
     f_score[source_id] = h_start;
     open_set.push({h_start, source_id});
 
@@ -75,14 +87,13 @@ RouteResult AStar::findShortestPath(const Graph& graph,
             const std::string& v = edge.target_id;
             if (closed_set[v]) continue;
 
-            double tentative_g = g_score[u] + edge.distance_km;
+            double tentative_g = g_score[u] + edge.cost(by_time);
 
             if (tentative_g < g_score[v]) {
                 previous[v] = u;
                 g_score[v] = tentative_g;
                 const Stop* v_stop = graph.getStop(v);
-                double h = Graph::haversineDistance(v_stop->lat, v_stop->lon,
-                                                    target_stop->lat, target_stop->lon);
+                double h = heuristic(v_stop);
                 f_score[v] = tentative_g + h;
                 open_set.push({f_score[v], v});
                 edge_relaxations++;
@@ -132,7 +143,8 @@ RouteResult AStar::findShortestPath(const Graph& graph,
         const Edge* e = graph.findEdge(path[i], path[i+1]);
         if (e) {
             total_dist += e->distance_km;
-            total_time += e->base_time_mins;
+            total_time += e->travelTimeMins();
+            res.free_flow_time_mins += e->base_time_mins;
         }
     }
     res.total_distance_km = total_dist;

@@ -1,4 +1,5 @@
 #include "Graph.h"
+#include "TrafficModel.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -165,6 +166,7 @@ bool Graph::loadFromCSV(const std::string& stops_csv_path,
 
         std::string road = (fields.size() > 4) ? fields[4] : "";
         bool bidirectional = (fields.size() > 5) ? (fields[5] == "1" || fields[5] == "true" || fields[5] == "TRUE") : true;
+        std::string road_type = (fields.size() > 6 && !fields[6].empty()) ? fields[6] : "arterial";
 
         // Forward Edge
         Edge fwd;
@@ -174,6 +176,7 @@ bool Graph::loadFromCSV(const std::string& stops_csv_path,
         fwd.base_time_mins = btime;
         fwd.road_name = road;
         fwd.bidirectional = bidirectional;
+        fwd.road_type = road_type;
 
         std::string fwd_key = src + "--" + tgt;
         if (m_shapes.find(fwd_key) != m_shapes.end()) {
@@ -195,6 +198,7 @@ bool Graph::loadFromCSV(const std::string& stops_csv_path,
             rev.base_time_mins = btime;
             rev.road_name = road;
             rev.bidirectional = bidirectional;
+            rev.road_type = road_type;
 
             std::string rev_key = tgt + "--" + src;
             if (m_shapes.find(rev_key) != m_shapes.end()) {
@@ -274,4 +278,20 @@ std::vector<std::pair<double, double>> Graph::reconstructPolyline(const std::vec
         }
     }
     return points;
+}
+
+void Graph::applyTraffic(const TrafficModel& model, TrafficMode mode, const DateTime& when) {
+    // Edges are stored twice (adjacency list + flat edge list), so update both.
+    for (auto& [stop_id, edges] : m_adjacency) {
+        for (auto& e : edges) e.traffic_factor = model.predict(mode, e.road_type, when);
+    }
+    for (auto& e : m_all_edges) e.traffic_factor = model.predict(mode, e.road_type, when);
+}
+
+double Graph::maxFreeFlowSpeedKmph() const {
+    double best = 1.0;
+    for (const auto& e : m_all_edges) {
+        if (e.base_time_mins > 0) best = std::max(best, e.distance_km / (e.base_time_mins / 60.0));
+    }
+    return best;
 }

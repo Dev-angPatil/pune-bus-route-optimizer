@@ -1,39 +1,39 @@
-source_id,target_id,distance_km,base_time_mins,road_name,bidirectional
-hinjewadi_ph3,hinjewadi_ph1,5.8,14,Hinjewadi Megapolis Corridor,1
-hinjewadi_ph1,wakad_bridge,3.2,12,Hinjewadi-Wakad Flyover Link,1
-wakad_bridge,baner_phata,4.6,9,Bangalore-Pune Highway Bypass (NH48),1
-baner_phata,pune_university,5.7,18,Baner Road Arterial,1
-wakad_bridge,aundh_chowk,5.9,15,Wakad-Aundh BRT Corridor,1
-aundh_chowk,pune_university,3.1,14,Ganeshkhind Road,1
-baner_phata,chandani_chowk,6.2,11,Pashan-Bavdhan Bypass,1
-chandani_chowk,kothrud_depot,3.4,9,Paud Road Arterial,1
-chandani_chowk,warje_bridge,4.1,7,Mumbai-Bangalore Highway Western Ring,1
-kothrud_depot,deccan_gymkhana,4.8,16,Karve Road Metro & BRT Corridor,1
-warje_bridge,sinhagad_road,3.5,9,Warje-Vadgaon Flyover,1
-pune_university,shivajinagar,3.2,15,University-Shivajinagar Spine,1
-shivajinagar,manapa_pmc,1.8,7,Shivajinagar-PMC Dengle Pul,1
-manapa_pmc,deccan_gymkhana,2.3,8,Jangali Maharaj (JM) Road Corridor,1
-deccan_gymkhana,swargate,2.9,14,Tilak Road / Bajirao Road Axis,1
-manapa_pmc,swargate,3.4,16,Shivaji Road City Center BRT,1
-shivajinagar,pune_station,2.6,10,Sassoon Road Connector,1
-pune_station,manapa_pmc,2.4,9,Moledina Road - PMC,1
-pune_station,swargate,3.9,14,Pune Station - Swargate Direct (Camp),1
-pune_station,camp_pulgate,2.5,8,Camp MG Road Spine,1
-camp_pulgate,swargate,3.1,11,Shankarsheth Road BRT,1
-pune_station,yerawada_chowk,3.3,11,Bund Garden Bridge - Nagar Road,1
-yerawada_chowk,viman_nagar,4.5,13,Nagar Road BRT Corridor,1
-viman_nagar,kharadi_bypass,4.2,12,Nagar Highway Tech Extension,1
-pune_station,hadapsar_gadital,7.8,24,Solapur Road BRT Corridor,1
-camp_pulgate,hadapsar_gadital,6.2,18,Hadapsar Fast Arterial,1
-hadapsar_gadital,magarpatta_city,2.1,6,Magarpatta Cybercity Feeder,1
-magarpatta_city,kharadi_bypass,4.9,14,Mundhwa-Kharadi Bridge Link,1
-swargate,katraj_depot,6.4,22,Pune-Satara Road BRT Trunk Line,1
-swargate,sinhagad_road,2.8,12,Sarasbaug - Sinhagad Road Link,1
-sinhagad_road,katraj_depot,5.3,13,Ambegaon-Katraj Bypass,1
-katraj_depot,hadapsar_gadital,11.2,28,Katraj-Kondhwa-Hadapsar Ring Corridor,1
-katraj_depot,chandani_chowk,10.8,16,Western Bypass Highway (NH48 South),1
-wakad_bridge,nigdi_shakti,8.2,18,Old Mumbai-Pune PCMC Highway,1
-aundh_chowk,bhosari_terminal,9.6,22,Spine Road - PCMC Link,1
-shivajinagar,bhosari_terminal,11.8,30,Pune-Nashik Highway Arterial,1
-bhosari_terminal,yerawada_chowk,9.4,21,Alandi Road - Vishrantwadi Connector,1
-nigdi_shakti,bhosari_terminal,10.1,23,Telco Road MIDC Connector,1
+source_id,target_id,distance_km,base_time_mins,road_name,bidirectional,road_type
+hinjewadi_ph3,hinjewadi_ph1,5.8,14,Hinjewadi Megapolis Corridor,1,it_corridor
+hinjewadi_ph1,wakad_bridge,3.2,12,Hinjewadi-Wakad Flyover Link,1,it_corridor
+wakad_bridge,baner_phata,4.6,9,Bangalore-Pune Highway Bypass (NH48),1,highway
+baner_phata,pune_university,5.7,18,Baner Road Arterial,1,arterial
+wakad_bridge,aundh_chowk,5.9,15,Wakad-Aundh BRT Corridor,1,arterial
+aundh_chowk,pune_university,3.1,14,Ganeshkhind Road,1,arterial
+baner_phata,chandani_chowk,6.2,11,Pashan-Bavdhan Bypass,1,highway
+chandani_chowk,kothrud_depot,3.4,9,Paud Road Arterial,1,arterial
+chandani_chowk,warje_bridge,4.1,7,Mumbai-Bangalore Highway Western Ring,1,highway
+kothrud_depot,deccan_gymkhana,4.8,16,Karve Road Metro & BRT Corridor,1,city_center
+warje_bridge,sinhagad_road,3.5,9,Warje-Vadgaon Flyover,1,arterial
+pune_university,shivajinagar,3.2,15,University-Shivajinagar Spine,1,city_center
+shivajinagar,manapa_pmc,1.8,7,Shivajinagar-PMC Dengle Pul,1,city_center
+manapa_pmc,deccan_gymkhana,2.3,8,Jangali Maharaj (JM) Road Corridor,1,city_center
+deccan_gymkhana,swargate,2.9,14,Tilak Road / Bajirao Road Axis,1,city_center
+manapa_pmc,swargate,3.4,16,Shivaji Road City Center BRT,1,city_center
+shivajinagar,pune_station,2.6,10,Sassoon Road Connector,1,city_center
+pune_station,manapa_pmc,2.4,9,Moledina Road - PMC,1,city_center
+pune_station,swargate,3.9,14,Pune Station - Swargate Direct (Camp),1,city_center
+pune_station,camp_pulgate,2.5,8,Camp MG Road Spine,1,city_center
+camp_pulgate,swargate,3.1,11,Shankarsheth Road BRT,1,city_center
+pune_station,yerawada_chowk,3.3,11,Bund Garden Bridge - Nagar Road,1,arterial
+yerawada_chowk,viman_nagar,4.5,13,Nagar Road BRT Corridor,1,arterial
+viman_nagar,kharadi_bypass,4.2,12,Nagar Highway Tech Extension,1,it_corridor
+pune_station,hadapsar_gadital,7.8,24,Solapur Road BRT Corridor,1,arterial
+camp_pulgate,hadapsar_gadital,6.2,18,Hadapsar Fast Arterial,1,arterial
+hadapsar_gadital,magarpatta_city,2.1,6,Magarpatta Cybercity Feeder,1,it_corridor
+magarpatta_city,kharadi_bypass,4.9,14,Mundhwa-Kharadi Bridge Link,1,it_corridor
+swargate,katraj_depot,6.4,22,Pune-Satara Road BRT Trunk Line,1,arterial
+swargate,sinhagad_road,2.8,12,Sarasbaug - Sinhagad Road Link,1,arterial
+sinhagad_road,katraj_depot,5.3,13,Ambegaon-Katraj Bypass,1,highway
+katraj_depot,hadapsar_gadital,11.2,28,Katraj-Kondhwa-Hadapsar Ring Corridor,1,arterial
+katraj_depot,chandani_chowk,10.8,16,Western Bypass Highway (NH48 South),1,highway
+wakad_bridge,nigdi_shakti,8.2,18,Old Mumbai-Pune PCMC Highway,1,highway
+aundh_chowk,bhosari_terminal,9.6,22,Spine Road - PCMC Link,1,arterial
+shivajinagar,bhosari_terminal,11.8,30,Pune-Nashik Highway Arterial,1,highway
+bhosari_terminal,yerawada_chowk,9.4,21,Alandi Road - Vishrantwadi Connector,1,arterial
+nigdi_shakti,bhosari_terminal,10.1,23,Telco Road MIDC Connector,1,arterial

@@ -10,6 +10,8 @@ SOURCES += \
     src/core/AStar.cpp \
     src/core/BellmanFord.cpp \
     src/core/Benchmark.cpp \
+    src/core/TrafficModel.cpp \
+    src/core/DeparturePlanner.cpp \
     src/gui/gui_main.cpp \
     src/gui/MainWindow.cpp
 
@@ -22,5 +24,8 @@ HEADERS += \
     src/core/AStar.h \
     src/core/BellmanFord.h \
     src/core/Benchmark.h \
+    src/core/TrafficModel.h \
+    src/core/DeparturePlanner.h \
+    src/gui/DepartureChart.h \
     src/gui/MapBridge.h \
     src/gui/MainWindow.h

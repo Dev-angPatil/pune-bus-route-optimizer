@@ -6,15 +6,18 @@
 
 RouteResult Dijkstra::findShortestPath(const Graph& graph,
                                        const std::string& source_id,
-                                       const std::string& target_id) {
+                                       const std::string& target_id,
+                                       bool by_time) {
     RouteResult res;
     res.algorithm_name = "Dijkstra's Algorithm";
     res.source_id = source_id;
     res.target_id = target_id;
+    res.optimized_for_time = by_time;
     res.paradigm = "Greedy Strategy";
     res.time_complexity = "O((V + E) log V)";
     res.space_complexity = "O(V)";
     res.notes = "Standard Dijkstra using min-heap priority queue. Optimizes physical road distance.";
+    if (by_time) res.notes = "Standard Dijkstra using min-heap priority queue. Optimizes travel time with predicted traffic.";
 
     if (!graph.hasStop(source_id) || !graph.hasStop(target_id)) {
         res.found = false;
@@ -67,7 +70,7 @@ RouteResult Dijkstra::findShortestPath(const Graph& graph,
 
         for (const auto& edge : graph.getOutgoingEdges(u)) {
             const std::string& v = edge.target_id;
-            double weight = edge.distance_km;
+            double weight = edge.cost(by_time);   // km, or minutes with traffic
 
             if (distances[u] + weight < distances[v]) {
                 distances[v] = distances[u] + weight;
@@ -121,7 +124,8 @@ RouteResult Dijkstra::findShortestPath(const Graph& graph,
         const Edge* e = graph.findEdge(path[i], path[i+1]);
         if (e) {
             total_dist += e->distance_km;
-            total_time += e->base_time_mins;
+            total_time += e->travelTimeMins();
+            res.free_flow_time_mins += e->base_time_mins;
         }
     }
     res.total_distance_km = total_dist;

@@ -19,5 +19,6 @@ class Benchmark {
 public:
     static BenchmarkComparison compareAll(const Graph& graph,
                                          const std::string& source_id,
-                                         const std::string& target_id);
+                                         const std::string& target_id,
+                                         bool by_time = false);
 };

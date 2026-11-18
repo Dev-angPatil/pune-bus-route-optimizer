@@ -3,6 +3,8 @@
 #include "../core/AStar.h"
 #include "../core/BellmanFord.h"
 #include "../core/Benchmark.h"
+#include "../core/DeparturePlanner.h"
+#include "DepartureChart.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -15,6 +17,8 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QUrl>
+#include <QDialog>
+#include <QDateTime>
 #include <sstream>
 #include <iomanip>
 
@@ -34,6 +38,11 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     m_graph.loadFromCSV(m_stopsPath, m_routesPath, m_shapesPath);
+
+    // Train the traffic prediction models from the history CSV (same data folder)
+    QString dataDir = QFileInfo(QString::fromStdString(m_stopsPath)).path();
+    m_traffic.load((dataDir + "/traffic_history.csv").toStdString(),
+                   (dataDir + "/holidays.csv").toStdString());
 
     setupUI();
     applyDarkTheme();
@@ -105,9 +114,40 @@ void MainWindow::setupUI() {
     m_algoCombo->addItem("⚡ Compare All 3 (Side-by-Side Benchmark)");
     routeLayout->addWidget(m_algoCombo, 2, 1, 1, 2);
 
+    routeLayout->addWidget(new QLabel("Departure:"), 3, 0);
+    QDateTime now = QDateTime::currentDateTime();
+    now.setTime(QTime(now.time().hour(), now.time().minute() < 30 ? 0 : 30));
+    m_departureEdit = new QDateTimeEdit(now, routeBox);
+    m_departureEdit->setDisplayFormat("ddd dd MMM yyyy  hh:mm");
+    m_departureEdit->setCalendarPopup(true);
+    routeLayout->addWidget(m_departureEdit, 3, 1, 1, 2);
+
+    routeLayout->addWidget(new QLabel("Traffic Model:"), 4, 0);
+    m_trafficCombo = new QComboBox(routeBox);
+    m_trafficCombo->addItem("🚫 Off - shortest distance (no traffic)");
+    m_trafficCombo->addItem("📊 Historical Average - fastest time");
+    m_trafficCombo->addItem("🤖 Linear Regression (ML) - fastest time");
+    m_trafficCombo->setCurrentIndex(m_traffic.isLoaded() ? 2 : 0);
+    m_trafficCombo->setEnabled(m_traffic.isLoaded());
+    m_trafficCombo->setToolTip(QString("Trained on %1 rows. Test-set error (MAE): average %2, regression %3 (R² %4)")
+                                   .arg(m_traffic.trainRows())
+                                   .arg(m_traffic.maeAverage(), 0, 'f', 3)
+                                   .arg(m_traffic.maeRegression(), 0, 'f', 3)
+                                   .arg(m_traffic.r2Regression(), 0, 'f', 2));
+    routeLayout->addWidget(m_trafficCombo, 4, 1, 1, 2);
+
     m_findRouteBtn = new QPushButton("🚀 Find Optimal Route", routeBox);
     m_findRouteBtn->setStyleSheet("background-color: #2563eb; color: white; font-weight: bold; padding: 8px;");
-    routeLayout->addWidget(m_findRouteBtn, 3, 0, 1, 3);
+    routeLayout->addWidget(m_findRouteBtn, 5, 0, 1, 3);
+
+    m_bestTimeBtn = new QPushButton("📈 Best Time to Leave (whole day)", routeBox);
+    m_bestTimeBtn->setEnabled(m_traffic.isLoaded());
+    routeLayout->addWidget(m_bestTimeBtn, 6, 0, 1, 3);
+
+    m_trafficLabel = new QLabel(routeBox);
+    m_trafficLabel->setStyleSheet("color: #94a3b8; font-size: 11px;");
+    m_trafficLabel->setWordWrap(true);
+    routeLayout->addWidget(m_trafficLabel, 7, 0, 1, 3);
 
     leftLayout->addWidget(routeBox);
 
@@ -185,6 +225,7 @@ void MainWindow::setupUI() {
     // Connections
     connect(m_findRouteBtn, &QPushButton::clicked, this, &MainWindow::onFindRouteClicked);
     connect(m_swapBtn, &QPushButton::clicked, this, &MainWindow::onSwapStopsClicked);
+    connect(m_bestTimeBtn, &QPushButton::clicked, this, &MainWindow::onBestTimeClicked);
     connect(m_importMapBtn, &QPushButton::clicked, this, &MainWindow::onImportMapClicked);
     connect(m_resetMapBtn, &QPushButton::clicked, this, &MainWindow::onResetMapClicked);
     connect(m_webView, &QWebEngineView::loadFinished, this, &MainWindow::onWebPageLoaded);
@@ -204,6 +245,7 @@ void MainWindow::applyDarkTheme() {
         "QListWidget { background-color: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 4px; }"
         "QListWidget::item { padding: 4px; border-bottom: 1px solid #334155; }"
         "QTableWidget { background-color: #1e293b; border: 1px solid #334155; gridline-color: #334155; }"
+        "QDateTimeEdit { background-color: #1e293b; border: 1px solid #475569; border-radius: 4px; padding: 5px; color: #f8fafc; }"
         "QHeaderView::section { background-color: #0f172a; color: #94a3b8; font-weight: bold; border: 1px solid #334155; padding: 4px; }"
     );
 }
@@ -277,6 +319,7 @@ void MainWindow::sendNetworkToMap() {
                    << "\",\"target\":\"" << e.target_id
                    << "\",\"distance_km\":" << e.distance_km
                    << ",\"road_name\":\"" << e.road_name
+                   << "\",\"road_type\":\"" << e.road_type
                    << "\",\"polyline\":[";
         for (size_t p = 0; p < e.polyline.size(); ++p) {
             edges_json << "[" << e.polyline[p].first << "," << e.polyline[p].second << "]";
@@ -321,6 +364,116 @@ void MainWindow::sendRouteToMap(const RouteResult& res) {
     m_webView->page()->runJavaScript(QString("displayRoute(%1);").arg(json));
 }
 
+// ======================= Traffic prediction helpers ========================
+
+TrafficMode MainWindow::currentTrafficMode() const {
+    switch (m_trafficCombo->currentIndex()) {
+        case 1:  return TrafficMode::HistoricalAverage;
+        case 2:  return TrafficMode::LinearRegression;
+        default: return TrafficMode::Off;
+    }
+}
+
+DateTime MainWindow::currentDeparture() const {
+    QDateTime q = m_departureEdit->dateTime();
+    DateTime dt;
+    dt.year = q.date().year();
+    dt.month = q.date().month();
+    dt.day = q.date().day();
+    dt.hour = q.time().hour();
+    dt.minute = q.time().minute();
+    return dt;
+}
+
+bool MainWindow::applyTrafficFromUI() {
+    TrafficMode mode = currentTrafficMode();
+    DateTime when = currentDeparture();
+    m_graph.applyTraffic(m_traffic, mode, when);
+    sendTrafficToMap();
+
+    if (mode == TrafficMode::Off) {
+        m_trafficLabel->setText("Traffic off: routes minimise distance (km) using free-flow times.");
+        return false;
+    }
+    QString holiday = QString::fromStdString(m_traffic.holidayName(when));
+    m_trafficLabel->setText(QString("%1 | %2%3 | congestion: IT %4x · City %5x · Arterial %6x · Highway %7x")
+        .arg(QString::fromStdString(trafficModeName(mode)))
+        .arg(QString::fromStdString(m_traffic.dayType(when)))
+        .arg(holiday.isEmpty() ? "" : " (" + holiday + ")")
+        .arg(m_traffic.predict(mode, "it_corridor", when), 0, 'f', 2)
+        .arg(m_traffic.predict(mode, "city_center", when), 0, 'f', 2)
+        .arg(m_traffic.predict(mode, "arterial", when), 0, 'f', 2)
+        .arg(m_traffic.predict(mode, "highway", when), 0, 'f', 2));
+    return true;
+}
+
+void MainWindow::sendTrafficToMap() {
+    // One factor per edge, in the same order as sendNetworkToMap() sent them.
+    std::ostringstream oss;
+    oss << "[";
+    const auto& edges = m_graph.getAllEdges();
+    for (size_t i = 0; i < edges.size(); ++i) {
+        oss << std::fixed << std::setprecision(2) << edges[i].traffic_factor;
+        if (i + 1 < edges.size()) oss << ",";
+    }
+    oss << "]";
+    bool on = currentTrafficMode() != TrafficMode::Off;
+    m_webView->page()->runJavaScript(QString("setTrafficFactors(%1, %2);")
+                                         .arg(QString::fromStdString(oss.str()))
+                                         .arg(on ? "true" : "false"));
+}
+
+QString MainWindow::travelTimeText(const RouteResult& res) const {
+    if (!res.optimized_for_time) return QString("%1 mins").arg(res.total_time_mins, 0, 'f', 1);
+    return QString("%1 mins (+%2 traffic)")
+        .arg(res.total_time_mins, 0, 'f', 1)
+        .arg(res.total_time_mins - res.free_flow_time_mins, 0, 'f', 1);
+}
+
+void MainWindow::onBestTimeClicked() {
+    std::string src = m_originCombo->currentData().toString().toStdString();
+    std::string tgt = m_destCombo->currentData().toString().toStdString();
+    if (src.empty() || tgt.empty() || src == tgt) {
+        QMessageBox::warning(this, "Input Required", "Please select two different stops.");
+        return;
+    }
+
+    TrafficMode mode = currentTrafficMode();
+    if (mode == TrafficMode::Off) mode = TrafficMode::LinearRegression;   // a sweep needs traffic
+
+    DateTime day = currentDeparture();
+    auto departures = DeparturePlanner::sweepDay(m_graph, m_traffic, mode, src, tgt, day);
+    applyTrafficFromUI();   // sweep changed edge weights; restore the selected time
+    int best = DeparturePlanner::bestSlot(departures);
+    if (best < 0) {
+        QMessageBox::warning(this, "No Path Found", "Could not find a path connecting the selected stops.");
+        return;
+    }
+
+    double worst = 0;
+    for (const auto& s : departures) worst = std::max(worst, s.travel_time_mins);
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Best Time to Leave");
+    dialog.setStyleSheet("background-color: #0f172a; color: #f8fafc;");
+    auto* layout = new QVBoxLayout(&dialog);
+    auto* title = new QLabel(QString("<b>%1 → %2</b> on %3 (%4) · %5")
+        .arg(m_originCombo->currentText(), m_destCombo->currentText())
+        .arg(QString::fromStdString(day.dateString()))
+        .arg(QString::fromStdString(m_traffic.dayType(day)))
+        .arg(QString::fromStdString(trafficModeName(mode))), &dialog);
+    title->setWordWrap(true);
+    layout->addWidget(title);
+    layout->addWidget(new DepartureChart(departures, best, &dialog));
+    auto* verdict = new QLabel(QString("✅ Leave at <b>%1</b> → about <b>%2 mins</b> (worst slot: %3 mins)")
+        .arg(QString::fromStdString(departures[best].departure.toString().substr(11)))
+        .arg(departures[best].travel_time_mins, 0, 'f', 0)
+        .arg(worst, 0, 'f', 0), &dialog);
+    verdict->setStyleSheet("color: #10b981; font-size: 14px;");
+    layout->addWidget(verdict);
+    dialog.exec();
+}
+
 void MainWindow::onFindRouteClicked() {
     std::string src = m_originCombo->currentData().toString().toStdString();
     std::string tgt = m_destCombo->currentData().toString().toStdString();
@@ -336,10 +489,11 @@ void MainWindow::onFindRouteClicked() {
     }
 
     int algoChoice = m_algoCombo->currentIndex();
+    bool byTime = applyTrafficFromUI();   // predict traffic for the chosen departure time
 
     if (algoChoice == 3) {
         // Compare All 3 Algorithms
-        auto comp = Benchmark::compareAll(m_graph, src, tgt);
+        auto comp = Benchmark::compareAll(m_graph, src, tgt, byTime);
 
         m_compareTable->show();
         m_compareTable->setItem(0, 0, new QTableWidgetItem("Distance (km)"));
@@ -363,7 +517,7 @@ void MainWindow::onFindRouteClicked() {
         m_compareTable->setItem(3, 3, new QTableWidgetItem(QString::number(comp.bellman_ford.execution_time_us)));
 
         m_distValLabel->setText(QString("%1 km").arg(comp.dijkstra.total_distance_km, 0, 'f', 2));
-        m_timeValLabel->setText(QString("%1 mins").arg(comp.dijkstra.total_time_mins, 0, 'f', 1));
+        m_timeValLabel->setText(travelTimeText(comp.dijkstra));
         m_execValLabel->setText(QString("%1 / %2 / %3 µs")
                                     .arg(comp.dijkstra.execution_time_us)
                                     .arg(comp.astar.execution_time_us)
@@ -389,11 +543,11 @@ void MainWindow::onFindRouteClicked() {
         m_compareTable->hide();
         RouteResult res;
         if (algoChoice == 0) {
-            res = Dijkstra::findShortestPath(m_graph, src, tgt);
+            res = Dijkstra::findShortestPath(m_graph, src, tgt, byTime);
         } else if (algoChoice == 1) {
-            res = AStar::findShortestPath(m_graph, src, tgt);
+            res = AStar::findShortestPath(m_graph, src, tgt, byTime);
         } else {
-            res = BellmanFord::findShortestPath(m_graph, src, tgt);
+            res = BellmanFord::findShortestPath(m_graph, src, tgt, byTime);
         }
 
         if (!res.found) {
@@ -402,7 +556,7 @@ void MainWindow::onFindRouteClicked() {
         }
 
         m_distValLabel->setText(QString("%1 km").arg(res.total_distance_km, 0, 'f', 2));
-        m_timeValLabel->setText(QString("%1 mins").arg(res.total_time_mins, 0, 'f', 1));
+        m_timeValLabel->setText(travelTimeText(res));
         m_execValLabel->setText(QString("%1 µs").arg(res.execution_time_us));
         m_nodesValLabel->setText(QString("%1 nodes").arg(res.nodes_explored));
         m_complexityLabel->setText(QString("Time: %1 | Space: %2")

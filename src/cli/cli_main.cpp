@@ -3,6 +3,8 @@
 #include "../core/AStar.h"
 #include "../core/BellmanFord.h"
 #include "../core/Benchmark.h"
+#include "../core/TrafficModel.h"
+#include "../core/DeparturePlanner.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -70,6 +72,13 @@ void printResult(const RouteResult& res) {
     std::cout << std::fixed << std::setprecision(2);
     std::cout << " * Total Distance    : " << Color::BOLD << res.total_distance_km << " km" << Color::RESET << "\n";
     std::cout << " * Est. Travel Time  : " << Color::BOLD << res.total_time_mins << " mins" << Color::RESET << "\n";
+    if (res.optimized_for_time) {
+        std::cout << " * Free-flow Time    : " << res.free_flow_time_mins << " mins  (traffic delay: "
+                  << Color::RED << "+" << (res.total_time_mins - res.free_flow_time_mins) << " mins" << Color::RESET << ")\n";
+        std::cout << " * Optimized For     : " << Color::BOLD << "Fastest travel time (with predicted traffic)" << Color::RESET << "\n";
+    } else {
+        std::cout << " * Optimized For     : " << Color::BOLD << "Shortest distance" << Color::RESET << "\n";
+    }
     std::cout << " * Execution Time    : " << Color::CYAN << Color::BOLD << res.execution_time_us << " microseconds (us)" << Color::RESET << "\n";
     std::cout << " * Nodes Explored    : " << Color::BOLD << res.nodes_explored << Color::RESET << "\n";
     std::cout << " * Edge Relaxations  : " << Color::BOLD << res.edge_relaxations << Color::RESET << "\n";
@@ -134,6 +143,103 @@ void printBenchmark(const BenchmarkComparison& comp) {
     std::cout << "======================================================================\n";
 }
 
+// ===================== Traffic prediction helpers =========================
+
+const char* WEEKDAY_NAMES[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+TrafficMode parseMode(const std::string& text) {
+    if (text == "avg" || text == "average") return TrafficMode::HistoricalAverage;
+    if (text == "off" || text == "none") return TrafficMode::Off;
+    return TrafficMode::LinearRegression;
+}
+
+void printTrafficContext(const TrafficModel& model, TrafficMode mode, const DateTime& when) {
+    std::cout << "\n" << Color::BOLD << " Departure : " << Color::RESET << when.toString()
+              << " (" << WEEKDAY_NAMES[when.dayOfWeek()] << ", " << model.dayType(when);
+    std::string holiday = model.holidayName(when);
+    if (!holiday.empty()) std::cout << ": " << holiday;
+    std::cout << ")\n";
+    std::cout << Color::BOLD << " Model     : " << Color::RESET << trafficModeName(mode) << "\n";
+    std::cout << Color::BOLD << " Predicted congestion factor (1.00 = empty road):\n" << Color::RESET;
+    for (const char* road : {"it_corridor", "city_center", "arterial", "highway"}) {
+        std::cout << "   " << std::left << std::setw(14) << road << std::fixed << std::setprecision(2)
+                  << model.predict(mode, road, when) << "x\n";
+    }
+}
+
+void printModelInfo(const TrafficModel& model) {
+    std::cout << "\n" << Color::BOLD << Color::MAGENTA
+              << "======================================================================\n"
+              << "        TRAFFIC PREDICTION MODEL (trained on data/traffic_history.csv)\n"
+              << "======================================================================\n" << Color::RESET;
+    std::cout << " Training rows: " << model.trainRows() << "   Test rows: " << model.testRows()
+              << "   (80/20 split)\n\n";
+
+    std::cout << Color::BOLD << " Linear Regression weights (learned by Gradient Descent):\n" << Color::RESET;
+    std::cout << "   congestion_factor = sum of (weight x feature), each feature is 0 or 1\n\n";
+    const auto& names = TrafficModel::featureNames();
+    const auto& w = model.weights();
+    for (size_t i = 0; i < names.size() && i < w.size(); ++i) {
+        std::cout << "   " << std::left << std::setw(34) << names[i]
+                  << (w[i] >= 0 ? Color::GREEN + "+" : Color::RED) << std::fixed << std::setprecision(3)
+                  << w[i] << Color::RESET << "\n";
+    }
+
+    std::cout << "\n" << Color::BOLD << " Accuracy on unseen test data (Mean Absolute Error, lower is better):\n" << Color::RESET;
+    std::cout << "   No traffic (always 1.0)  : " << model.maeNoTraffic() << "\n";
+    std::cout << "   Historical Average       : " << model.maeAverage() << "\n";
+    std::cout << "   Linear Regression        : " << model.maeRegression()
+              << "   (R^2 = " << model.r2Regression() << ")\n";
+    std::cout << "======================================================================\n";
+}
+
+void printBestDeparture(Graph& graph, const TrafficModel& model, TrafficMode mode,
+                        const std::string& src, const std::string& tgt, const DateTime& day) {
+    if (mode == TrafficMode::Off) mode = TrafficMode::LinearRegression;  // a sweep needs traffic
+    auto slots = DeparturePlanner::sweepDay(graph, model, mode, src, tgt, day);
+    int best = DeparturePlanner::bestSlot(slots);
+    if (best < 0) {
+        std::cout << Color::RED << " [X] No route found between these stops.\n" << Color::RESET;
+        return;
+    }
+
+    double worst = 0;
+    for (const auto& s : slots) worst = std::max(worst, s.travel_time_mins);
+
+    std::cout << "\n" << Color::BOLD << Color::MAGENTA
+              << "======================================================================\n"
+              << "   BEST TIME TO LEAVE  |  " << day.dateString() << " ("
+              << WEEKDAY_NAMES[day.dayOfWeek()] << ", " << model.dayType(day) << ")  |  " << trafficModeName(mode) << "\n"
+              << "======================================================================\n" << Color::RESET;
+    for (size_t i = 0; i < slots.size(); ++i) {
+        const auto& s = slots[i];
+        int bar = static_cast<int>(40.0 * s.travel_time_mins / worst);
+        char time_buf[8];
+        std::snprintf(time_buf, sizeof(time_buf), "%02d:%02d", s.departure.hour, s.departure.minute);
+        bool is_best = static_cast<int>(i) == best;
+        std::cout << " " << time_buf << "  " << (is_best ? Color::GREEN : Color::YELLOW)
+                  << std::string(bar, '#') << Color::RESET << " " << std::fixed << std::setprecision(1)
+                  << s.travel_time_mins << " min" << (is_best ? Color::GREEN + "  <-- best" + Color::RESET : "") << "\n";
+    }
+    const auto& b = slots[best];
+    std::cout << "----------------------------------------------------------------------\n";
+    std::cout << Color::GREEN << Color::BOLD << " Leave at " << b.departure.toString().substr(11)
+              << " -> about " << std::setprecision(0) << b.travel_time_mins << " mins"
+              << " (worst slot: " << worst << " mins)\n" << Color::RESET;
+    graph.applyTraffic(model, TrafficMode::Off, day);  // restore free-flow weights
+}
+
+bool askDateTime(DateTime& out) {
+    std::cout << "Enter departure date & time (YYYY-MM-DD HH:MM): ";
+    std::string date, time;
+    if (!(std::cin >> date >> time)) return false;
+    if (!DateTime::parse(date + " " + time, out)) {
+        std::cout << Color::RED << "Invalid date/time format.\n" << Color::RESET;
+        return false;
+    }
+    return true;
+}
+
 std::string selectStop(const Graph& graph, const std::string& prompt) {
     const auto& stops = graph.getAllStops();
     while (true) {
@@ -193,29 +299,74 @@ int main(int argc, char* argv[]) {
               << " road corridors successfully.\n" << Color::RESET;
 
     // Check for CLI non-interactive mode
-    std::string cli_from, cli_to, cli_algo;
-    bool cli_compare = false;
+    std::string cli_from, cli_to, cli_algo, cli_at, cli_model = "lr";
+    std::string history_path = "data/traffic_history.csv";
+    std::string holidays_path = "data/holidays.csv";
+    bool cli_compare = false, cli_best = false, cli_model_info = false;
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--from" && i + 1 < argc) cli_from = argv[++i];
         if (arg == "--to" && i + 1 < argc) cli_to = argv[++i];
         if (arg == "--algo" && i + 1 < argc) cli_algo = argv[++i];
         if (arg == "--compare") cli_compare = true;
+        if (arg == "--at" && i + 1 < argc) cli_at = argv[++i];
+        if (arg == "--model" && i + 1 < argc) cli_model = argv[++i];
+        if (arg == "--best-departure") cli_best = true;
+        if (arg == "--model-info") cli_model_info = true;
+        if (arg == "--history" && i + 1 < argc) history_path = argv[++i];
+        if (arg == "--holidays" && i + 1 < argc) holidays_path = argv[++i];
+    }
+
+    // Train the traffic prediction models (takes a fraction of a second)
+    TrafficModel traffic;
+    if (traffic.load(history_path, holidays_path)) {
+        std::cout << Color::GREEN << "[+] Traffic model trained on " << traffic.trainRows()
+                  << " historical observations.\n" << Color::RESET;
+    } else {
+        std::cout << Color::YELLOW << "[!] Traffic history not found (" << history_path
+                  << "): traffic prediction disabled.\n" << Color::RESET;
+    }
+    TrafficMode mode = parseMode(cli_model);
+
+    if (cli_model_info) {
+        printModelInfo(traffic);
+        return 0;
     }
 
     if (!cli_from.empty() && !cli_to.empty()) {
+        DateTime when;
+        bool use_traffic = !cli_at.empty() && mode != TrafficMode::Off;
+        if (!cli_at.empty() && !DateTime::parse(cli_at, when)) {
+            std::cerr << Color::RED << "Invalid --at value. Use \"YYYY-MM-DD HH:MM\".\n" << Color::RESET;
+            return 1;
+        }
+
+        if (cli_best) {
+            if (cli_at.empty()) {
+                std::cerr << Color::RED << "--best-departure needs --at \"YYYY-MM-DD\".\n" << Color::RESET;
+                return 1;
+            }
+            printBestDeparture(graph, traffic, mode, cli_from, cli_to, when);
+            return 0;
+        }
+
+        if (use_traffic) {
+            graph.applyTraffic(traffic, mode, when);
+            printTrafficContext(traffic, mode, when);
+        }
+
         if (cli_compare) {
-            auto comp = Benchmark::compareAll(graph, cli_from, cli_to);
+            auto comp = Benchmark::compareAll(graph, cli_from, cli_to, use_traffic);
             printBenchmark(comp);
             return 0;
         } else if (cli_algo == "astar") {
-            printResult(AStar::findShortestPath(graph, cli_from, cli_to));
+            printResult(AStar::findShortestPath(graph, cli_from, cli_to, use_traffic));
             return 0;
         } else if (cli_algo == "bellman") {
-            printResult(BellmanFord::findShortestPath(graph, cli_from, cli_to));
+            printResult(BellmanFord::findShortestPath(graph, cli_from, cli_to, use_traffic));
             return 0;
         } else {
-            printResult(Dijkstra::findShortestPath(graph, cli_from, cli_to));
+            printResult(Dijkstra::findShortestPath(graph, cli_from, cli_to, use_traffic));
             return 0;
         }
     }
@@ -229,8 +380,11 @@ int main(int argc, char* argv[]) {
         std::cout << "  4. Find Route with Bellman-Ford (Dynamic Programming)\n";
         std::cout << "  5. Compare All 3 Algorithms (Side-by-Side Benchmark)\n";
         std::cout << "  6. Import Custom Map (CSV files)\n";
+        std::cout << "  7. Fastest Route at a Date & Time (Traffic Prediction)\n";
+        std::cout << "  8. Best Time to Leave (sweep the whole day)\n";
+        std::cout << "  9. Show Trained Traffic Model (weights & accuracy)\n";
         std::cout << "  0. Exit\n";
-        std::cout << Color::CYAN << "Choose an option [0-6]: " << Color::RESET;
+        std::cout << Color::CYAN << "Choose an option [0-9]: " << Color::RESET;
 
         int choice = -1;
         if (!(std::cin >> choice)) {
@@ -287,8 +441,31 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
+            case 7: {
+                std::string src = selectStop(graph, "Select Source Stop");
+                std::string tgt = selectStop(graph, "Select Destination Stop");
+                DateTime when;
+                if (!askDateTime(when)) break;
+                TrafficMode m = (mode == TrafficMode::Off) ? TrafficMode::LinearRegression : mode;
+                graph.applyTraffic(traffic, m, when);
+                printTrafficContext(traffic, m, when);
+                printBenchmark(Benchmark::compareAll(graph, src, tgt, true));
+                graph.applyTraffic(traffic, TrafficMode::Off, when);  // back to free-flow
+                break;
+            }
+            case 8: {
+                std::string src = selectStop(graph, "Select Source Stop");
+                std::string tgt = selectStop(graph, "Select Destination Stop");
+                DateTime when;
+                if (!askDateTime(when)) break;
+                printBestDeparture(graph, traffic, mode, src, tgt, when);
+                break;
+            }
+            case 9:
+                printModelInfo(traffic);
+                break;
             default:
-                std::cout << Color::RED << "Invalid option! Please enter 0-6.\n" << Color::RESET;
+                std::cout << Color::RED << "Invalid option! Please enter 0-9.\n" << Color::RESET;
                 break;
         }
     }
