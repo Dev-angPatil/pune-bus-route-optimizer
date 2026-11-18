@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
 
     std::string stops_path = "data/stops.csv";
     std::string routes_path = "data/routes.csv";
-    std::string shapes_path = "data/shapes.json";
+    std::string shapes_path = "data/shapes.csv";
 
     // Allow path overrides from arguments
     for (int i = 1; i < argc; ++i) {

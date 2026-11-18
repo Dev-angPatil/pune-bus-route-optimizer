@@ -13,7 +13,7 @@ public:
     // Load graph from CSV files
     bool loadFromCSV(const std::string& stops_csv_path,
                      const std::string& routes_csv_path,
-                     const std::string& shapes_json_path = "");
+                     const std::string& shapes_csv_path = "");
 
     // Haversine formula to compute great-circle distance between two coordinates in km
     static double haversineDistance(double lat1, double lon1, double lat2, double lon2);
@@ -50,5 +50,5 @@ private:
 
     // Helper CSV parser for lines with potential quotes
     static std::vector<std::string> parseCSVLine(const std::string& line);
-    bool loadShapes(const std::string& shapes_json_path);
+    bool loadShapes(const std::string& shapes_csv_path);
 };

@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       m_stopsPath("data/stops.csv"),
       m_routesPath("data/routes.csv"),
-      m_shapesPath("data/shapes.json")
+      m_shapesPath("data/shapes.csv")
 {
     // Try local relative path first, fallback to cpp_project/ prefix
     if (!QFileInfo::exists(QString::fromStdString(m_stopsPath))) {
@@ -450,7 +450,7 @@ void MainWindow::onImportMapClicked() {
 void MainWindow::onResetMapClicked() {
     m_stopsPath = "data/stops.csv";
     m_routesPath = "data/routes.csv";
-    m_shapesPath = "data/shapes.json";
+    m_shapesPath = "data/shapes.csv";
 
     if (!QFileInfo::exists(QString::fromStdString(m_stopsPath))) {
         if (QFileInfo::exists("cpp_project/" + QString::fromStdString(m_stopsPath))) {

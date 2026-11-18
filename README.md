@@ -109,7 +109,7 @@ cpp_project/
 ├── data/
 │   ├── stops.csv             # 24 Pune Hubs (ID, Name, Lat, Lon, Category)
 │   ├── routes.csv            # 38 Transit Corridors (Source, Target, Distance, Time)
-│   └── shapes.json           # Road geometry polylines for real map curves
+│   └── shapes.csv            # Road geometry coordinates for real map curves
 ├── src/
 │   ├── core/
 │   │   ├── Stop.h            # Stop data structure

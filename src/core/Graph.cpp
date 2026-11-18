@@ -53,65 +53,32 @@ std::vector<std::string> Graph::parseCSVLine(const std::string& line) {
     return fields;
 }
 
-bool Graph::loadShapes(const std::string& shapes_json_path) {
-    if (shapes_json_path.empty()) return false;
-    std::ifstream file(shapes_json_path);
+bool Graph::loadShapes(const std::string& shapes_csv_path) {
+    if (shapes_csv_path.empty()) return false;
+    std::ifstream file(shapes_csv_path);
     if (!file.is_open()) return false;
 
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    // Minimal JSON parsing for {"u--v": [[lat, lon], ...]}
-    size_t pos = 0;
-    while (pos < content.size()) {
-        size_t key_start = content.find('\"', pos);
-        if (key_start == std::string::npos) break;
-        size_t key_end = content.find('\"', key_start + 1);
-        if (key_end == std::string::npos) break;
-
-        std::string key = content.substr(key_start + 1, key_end - key_start - 1);
-        pos = key_end + 1;
-
-        size_t arr_start = content.find('[', pos);
-        if (arr_start == std::string::npos) break;
-
-        // Find closing bracket for this key's array of points
-        size_t arr_end = arr_start;
-        int depth = 0;
-        for (size_t i = arr_start; i < content.size(); ++i) {
-            if (content[i] == '[') depth++;
-            else if (content[i] == ']') {
-                depth--;
-                if (depth == 0) {
-                    arr_end = i;
-                    break;
-                }
-            }
+    std::string line;
+    bool is_header = true;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        auto fields = parseCSVLine(line);
+        if (is_header) {
+            is_header = false;
+            continue;
         }
+        if (fields.size() < 5) continue;
 
-        std::string points_str = content.substr(arr_start, arr_end - arr_start + 1);
-        std::vector<std::pair<double, double>> polyline;
-
-        size_t ppos = 0;
-        while ((ppos = points_str.find('[', ppos + 1)) != std::string::npos) {
-            size_t pend = points_str.find(']', ppos);
-            if (pend == std::string::npos) break;
-            std::string pt = points_str.substr(ppos + 1, pend - ppos - 1);
-            size_t comma = pt.find(',');
-            if (comma != std::string::npos) {
-                try {
-                    double lat = std::stod(pt.substr(0, comma));
-                    double lon = std::stod(pt.substr(comma + 1));
-                    polyline.emplace_back(lat, lon);
-                } catch (...) {}
-            }
-            ppos = pend;
-        }
-
-        if (!polyline.empty()) {
-            m_shapes[key] = polyline;
-        }
-        pos = arr_end + 1;
+        std::string src = fields[0];
+        std::string tgt = fields[1];
+        try {
+            double lat = std::stod(fields[3]);
+            double lon = std::stod(fields[4]);
+            std::string key = src + "--" + tgt;
+            m_shapes[key].emplace_back(lat, lon);
+        } catch (...) {}
     }
-    return true;
+    return !m_shapes.empty();
 }
 
 void Graph::clear() {
@@ -125,11 +92,11 @@ void Graph::clear() {
 
 bool Graph::loadFromCSV(const std::string& stops_csv_path,
                         const std::string& routes_csv_path,
-                        const std::string& shapes_json_path) {
+                        const std::string& shapes_csv_path) {
     clear();
 
-    if (!shapes_json_path.empty()) {
-        loadShapes(shapes_json_path);
+    if (!shapes_csv_path.empty()) {
+        loadShapes(shapes_csv_path);
     }
 
     // 1. Read Stops
