@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-cd "$(dirname "$0")/cpp_project"
+cd "$(dirname "$0")"
 if [ ! -f "pune_route_cli" ]; then
     echo "[*] Building CLI application..."
     make cli

@@ -1,162 +1,170 @@
-# 🚍 Pune PMPML Dynamic Bus Route Optimizer
-> **A Graph-Theoretic Intelligent Transit Optimization Engine for Pune Metropolitan Region**  
-> *Developed with real PMPML (Pune Mahanagar Parivahan Mahamandal Ltd) GTFS Open Transit Data.*
+# 🚍 Pune PMPML Transit Route Optimizer (C++ & DAA College Project)
 
-[![React](https://img.shields.io/badge/React-19.0-61dafb?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.2-646cff?style=for-the-badge&logo=vite)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?style=for-the-badge&logo=leaflet)](https://leafletjs.com/)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776ab?style=for-the-badge&logo=python)](https://python.org/)
+> **A minimal, clean, and complete Graph Theory & Data Structures and Algorithms (DAA) project in Modern C++ (C++17) with interactive GUI, real OpenStreetMap navigation, and standalone CLI.**
+
+Developed using authentic transit hub coordinates and arterial corridors from **PMPML (Pune Mahanagar Parivahan Mahamandal Ltd)**.
 
 ---
 
-## 🌟 Project Highlights
+## 🎯 Highlights for College Evaluation & Viva
 
-- 🗺️ **Authentic Pune Geography**: Rendered with **CartoDB Dark Matter** dark-mode tiles with exact real coordinates for 24 major transit anchors (Hinjewadi IT Park, Swargate, Pune Station, Shivajinagar, Katraj, Hadapsar, Kothrud, Nigdi, Viman Nagar).
-- ⚡ **Crowd-Adaptive Dynamic Routing**: Uses an enhanced **Modified Dijkstra / A*** algorithm that balances geographic distance against real-time passenger crowd density and road choke-factors.
-- 🔴 vs 🟢 **Visual Side-by-Side Comparison**:
-  - **Red Dashed Polyline**: Traditional static timetable route (trapped in city-center bottlenecks).
-  - **Glowing Electric Emerald Polyline**: Crowd-optimized dynamic route bypassing chokepoints via arterial rings (e.g. Sinhagad Road & Western Bypass NH48).
-- 🔥 **Live Crowd Density Heatmap**: Radial crowd intensity halos across Pune terminals that surge dynamically during morning/evening commute hours.
-- 🚌 **Real-Time Fleet Simulation**: Moving PMPML bus markers traversing actual road curves with live speeds, route numbers (100, 115, 2A, 149, 103, 225, 315), and passenger occupancy gauges.
-- 📊 **Academic & College Viva Ready**: Built-in interactive **Algorithm Guide & Viva Q&A Modal** detailing time complexity $O((V+E)\log V)$, mathematical formulation, and carbon reduction metrics.
+1. **Core Algorithms Implemented**:
+   - 🟢 **Dijkstra's Algorithm**: Single-source shortest path using a Min-Heap priority queue (`std::priority_queue`). Demonstrates the **Greedy Paradigm**.
+   - 🔵 **A\* Search Algorithm**: Informed spatial search using an admissible **Haversine Distance Heuristic** $h(n)$ derived from real GPS coordinates. Explores significantly fewer nodes than Dijkstra.
+   - 🟠 **Bellman-Ford Algorithm**: Single-source shortest path via bottom-up edge relaxation over $|V| - 1$ passes with **Negative Cycle Detection**. Demonstrates the **Dynamic Programming Paradigm**.
+   - ⚡ **Side-by-Side Benchmark Engine**: Directly compares distance, travel time, nodes explored, edge relaxations, and CPU execution time in microseconds ($\mu s$).
+
+2. **Dual-Mode User Interface**:
+   - 🖥️ **Desktop GUI**: Sleek two-pane native Qt6 window featuring an embedded **Real OpenStreetMap** of Pune with interactive stop pins, route polylines, and dynamic algorithm performance cards.
+   - 💻 **Standalone Terminal CLI**: Pure standard C++17 with **zero external dependencies** (`g++ -std=c++17`), featuring formatted ANSI color tables and interactive menus. Perfect for running on any university lab machine.
+
+3. **Custom Map & CSV Import**:
+   - Easily import custom transit graphs using standard CSV files (`stops.csv` and `routes.csv`) via the GUI file picker or command line.
 
 ---
 
-## 📐 Mathematical Formulation
+## 📐 Algorithmic & Mathematical Breakdown
 
-### 1. Problem Graph
-The transit matrix is represented as a directed, edge-weighted graph:
+### 1. Graph Representation
+The transit network is modeled as a weighted directed graph:
 $$\mathcal{G} = (\mathcal{V}, \mathcal{E})$$
-where:
-- $\mathcal{V}$ = 24 Key Pune Multi-Modal Hubs & Terminals
+- $\mathcal{V}$ = 24 Key Pune Transit Hubs (Swargate, Hinjewadi, Pune Station, Katraj, Hadapsar, Shivajinagar, etc.)
 - $\mathcal{E}$ = 38 Connecting Arterial Road Corridors
-
-### 2. Dynamic Generalized Cost Function
-Unlike baseline Dijkstra which only computes geometric distance $d(u,v)$, our optimizer computes:
-$$\text{Cost}(e) = d(u,v) \times \left[ 1 + \alpha \cdot \mathcal{C}(e) \cdot \mathcal{S}(e) + \beta \cdot (\mathcal{B}(e) - 1) \right]$$
-
-- $d(u,v)$: Haversine distance in kilometers.
-- $\mathcal{C}(e)$: Average crowd density score at endpoints: $\frac{C(u) + C(v)}{2} \in [0.0, 1.0]$.
-- $\mathcal{S}(e)$: Corridor crowd sensitivity factor (reflecting lane width & mixed traffic impedance).
-- $\mathcal{B}(e)$: Chokepoint penalty multiplier (active when terminal queues exceed platform capacity).
-- $\alpha = 2.0, \beta = 1.5$: Tunable weights prioritizing passenger delay reduction over modest distance overhead.
-
-### 3. Bureau of Public Roads (BPR) Delay Function
-$$T_{\text{actual}}(e) = T_{\text{freeflow}}(e) \times \left[ 1 + (\mathcal{C}(e))^2 \cdot \mathcal{S}(e) \cdot 2.2 \cdot \mathcal{B}(e) \right]$$
+- Stored as an **Adjacency List** using `std::unordered_map<std::string, std::vector<Edge>>` for optimal $O(1)$ vertex lookup and $O(\text{deg}(u))$ neighbor traversal.
 
 ---
 
-## 🚀 Performance Case Study: Swargate ➔ Hinjewadi Phase 3
+### 2. Algorithm Comparison Matrix
 
-During **Morning Peak Rush (08:30 AM)**:
-
-| Metric | Baseline Route (Standard Dijkstra) | Dynamic Adaptive Route (Our Optimizer) | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Path Taken** | Swargate ➔ PMC ➔ Shivajinagar ➔ **University Chowk (Choked)** ➔ Aundh ➔ Wakad ➔ Hinjewadi | Swargate ➔ Sinhagad Rd ➔ Warje ➔ Chandani Chowk ➔ Baner Bypass ➔ Wakad ➔ Hinjewadi | **Avoided University Chokepoint** |
-| **Distance** | 26.4 km | 30.2 km | +3.8 km bypass |
-| **Estimated Travel Time** | **338 mins** (Severe standstill) | **222 mins** (Fluid highway flow) | **⚡ 116 mins saved (34.3% faster)** |
-| **Crowd Exposure** | 100% Bottleneck Traversal | Shifted to ring corridor | Smoother boarding |
-| **CO₂ Emissions Avoided** | High idle stop-and-go burn | Continuous cruising speed | ~18% Fuel Saved |
+| Algorithm | Paradigm | Time Complexity | Space Complexity | Heuristic Admissibility | Key Strength |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Dijkstra** | Greedy | $\mathcal{O}((V + E) \log V)$ | $\mathcal{O}(V)$ | None (Dijkstra is unguided) | Finds optimal shortest path in non-negative graphs |
+| **A\* Search** | Informed / Heuristic | $\mathcal{O}((V + E) \log V)$ (pruned) | $\mathcal{O}(V)$ | **Admissible & Consistent** ($h(n) \le d(n, \text{goal})$) | Explores significantly fewer nodes |
+| **Bellman-Ford** | Dynamic Programming | $\mathcal{O}(V \cdot E)$ | $\mathcal{O}(V)$ | None | Handles negative edges & detects negative cycles |
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+### 3. Haversine Geographic Heuristic Formula (A*)
+To ensure the A* algorithm is guaranteed to find the true optimal shortest path, the heuristic function $h(n)$ must be **admissible** (it must never overestimate the true remaining distance).
 
-- **Frontend Core**: React 19, TypeScript, Vite 6
-- **Styling & Effects**: Tailwind CSS 3.4, Glassmorphism, Neon Cyberpunk Palette
-- **Interactive Mapping**: Leaflet 1.9, CartoDB Dark Matter vector/raster tiles
-- **Audio Synthesis**: Web Audio API (zero external sound dependencies)
-- **Data Pipeline & Algorithmic Core**: Python 3, Open PMPML GTFS dataset (6,745 bus stops, 315 routes)
-- **Deployment**: Static build configured for GitHub Pages (`base: './'`)
+We compute the great-circle distance on the Earth's sphere between stop $n$ $(\phi_1, \lambda_1)$ and target stop $(\phi_2, \lambda_2)$:
+$$a = \sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)$$
+$$c = 2 \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1 - a}\right)$$
+$$h(n) = R \cdot c \quad (R = 6371.0 \text{ km})$$
+
+Because the straight-line spherical distance is the shortest possible path between two geographic points, $h(n) \le \text{TrueRoadDistance}(n, \text{target})$. Thus:
+- $h(n)$ is **admissible**.
+- $h(n)$ satisfies the triangle inequality and is therefore **monotonic / consistent**.
+
+---
+
+## 🚀 Quick Start & Compilation
+
+### Prerequisites
+- **For CLI Mode**: Any standard C++17 compiler (`g++` or `clang++`). No libraries required!
+- **For GUI Mode**: `qt6-base`, `qt6-webengine`, `qt6-webchannel`.
+
+### Build Targets
+
+Run from inside the `cpp_project` directory:
+
+```bash
+# 1. Build Standalone CLI (Zero Dependencies)
+make cli
+
+# 2. Build Desktop GUI with Real Map
+make gui
+
+# 3. Build Both
+make all
+```
+
+### Running the Applications
+
+#### Run the Desktop GUI:
+```bash
+./pune_route_optimizer
+# Or:
+make run
+```
+
+#### Run the Terminal CLI:
+```bash
+# Interactive Menu
+./pune_route_cli
+
+# Direct Comparison Command
+./pune_route_cli --from swargate --to hinjewadi_ph3 --compare
+
+# Single Algorithm Execution
+./pune_route_cli --from swargate --to hinjewadi_ph3 --algo astar
+```
 
 ---
 
 ## 📂 Project Structure
 
-```bash
-pune-bus-route-optimizer/
+```text
+cpp_project/
 ├── data/
-│   ├── stops.txt                  # Real PMPML bus stops dataset
-│   ├── routes.txt                 # Real PMPML route codes & names
-│   ├── trips.txt                  # Trip assignments
-│   ├── shapes.txt                 # Authentic GPS road geometry polylines
-│   └── pune_graph_export.json     # Graph dataset used by Python engine
-├── scripts/
-│   ├── build_transit_graph.py     # Extracts and constructs network graph
-│   └── optimizer_engine.py        # Python CLI optimization engine (Dijkstra, A*)
+│   ├── stops.csv             # 24 Pune Hubs (ID, Name, Lat, Lon, Category)
+│   ├── routes.csv            # 38 Transit Corridors (Source, Target, Distance, Time)
+│   └── shapes.json           # Road geometry polylines for real map curves
 ├── src/
-│   ├── components/
-│   │   ├── Header.tsx             # Navbar, sound toggle, heatmap toggle
-│   │   ├── MapComponent.tsx       # Leaflet map, route overlays, animated buses
-│   │   ├── ControlsPanel.tsx      # Origin/Destination, 24hr slider, scenarios
-│   │   ├── MetricsPanel.tsx       # KPI comparison, time saved, advisory
-│   │   ├── ActiveBusesPanel.tsx   # Simulated PMPML fleet telemetry
-│   │   ├── StopInspectorModal.tsx # Stop details, capacity, Marathi names
-│   │   └── AlgorithmGuideModal.tsx# Academic Viva presentation & Q&A
-│   ├── data/
-│   │   └── puneTransitData.json   # Processed web dataset (24 hubs, 38 edges)
-│   ├── types/
-│   │   └── transit.ts             # TypeScript interfaces
-│   ├── utils/
-│   │   ├── audio.ts               # Synthesized Web Audio sound effects
-│   │   └── routeOptimizer.ts      # Fast client-side graph solver
-│   ├── App.tsx                    # Main reactive container
-│   ├── main.tsx                   # React entry point
-│   └── index.css                  # Custom leaflet dark overrides & animations
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-└── README.md
+│   ├── core/
+│   │   ├── Stop.h            # Stop data structure
+│   │   ├── Edge.h            # Road corridor data structure
+│   │   ├── RouteResult.h     # Result metrics (Distance, Time, Exec Time, Path)
+│   │   ├── Graph.h / .cpp    # Adjacency list & Haversine distance engine
+│   │   ├── Dijkstra.h / .cpp # Dijkstra's algorithm (Min-Heap Greedy)
+│   │   ├── AStar.h / .cpp    # A* search algorithm (Heuristic)
+│   │   ├── BellmanFord.h / .cpp # Bellman-Ford algorithm (Dynamic Programming)
+│   │   └── Benchmark.h / .cpp   # 3-way side-by-side comparison engine
+│   ├── cli/
+│   │   └── cli_main.cpp      # Standalone Terminal interactive menu & runner
+│   └── gui/
+│       ├── gui_main.cpp      # GUI entry point
+│       ├── MainWindow.h / .cpp # Two-pane Qt6 window with KPI metrics & controls
+│       └── MapBridge.h       # C++ to JavaScript WebChannel bridge
+├── web/
+│   ├── map.html              # Embedded Leaflet OpenStreetMap frontend
+│   ├── leaflet.js / .css     # Offline Leaflet 1.9.4 map engine
+│   └── qwebchannel.js        # Qt WebChannel JavaScript client
+├── Makefile                  # Portable build automation
+├── pune_router.pro           # QMake project file for Qt Creator
+└── README.md                 # College documentation & Viva guide
 ```
 
 ---
 
-## 💻 Getting Started Locally
+## 🎓 College Viva Voce Q&A Preparation
 
-### 1. Web Application (Vite + React)
+### Q1: Why did you choose an Adjacency List instead of an Adjacency Matrix?
+> **Answer**:  
+> In public road networks, graphs are very sparse ($|E| \ll |V|^2$). For our 24 hubs, $|V|^2 = 576$, but there are only 38 road corridors.  
+> An adjacency list uses $\mathcal{O}(V + E)$ memory compared to an adjacency matrix's $\mathcal{O}(V^2)$ and allows traversing neighbors of a node in $\mathcal{O}(\text{degree}(u))$ rather than checking all $V$ entries.
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/Dev-angPatil/pune-bus-route-optimizer.git
-cd pune-bus-route-optimizer
+### Q2: Why does A* explore fewer nodes than Dijkstra?
+> **Answer**:  
+> Dijkstra expands outward uniformly in all directions (like a circle) because it only knows the cost from the origin $g(n)$.  
+> A* uses an evaluation function $f(n) = g(n) + h(n)$, where $h(n)$ is the Haversine distance to the destination. This heuristic guides the search beam towards the destination, pruning nodes that lead away from the target.
 
-# 2. Install dependencies
-npm install
+### Q3: What makes a heuristic "admissible" in A*?
+> **Answer**:  
+> A heuristic is admissible if it never overestimates the actual cost to reach the goal ($h(n) \le h^*(n)$). Because a straight-line great-circle distance is the shortest possible path between two points on Earth, the actual road distance can never be shorter than the Haversine distance. Therefore, our Haversine heuristic is mathematically guaranteed to be admissible and yields the optimal shortest path.
 
-# 3. Start local development server
-npm run dev
-```
+### Q4: When would you use Bellman-Ford over Dijkstra?
+> **Answer**:  
+> Dijkstra assumes all edge weights are non-negative ($w(u,v) \ge 0$). If a network contains negative edge weights (such as financial credits or fuel-regeneration sections), Dijkstra can fail. Bellman-Ford handles negative weights and can detect negative weight cycles. However, its time complexity is $\mathcal{O}(V \cdot E)$, making it slower than Dijkstra's $\mathcal{O}((V + E) \log V)$.
 
-Visit `http://localhost:3000` in your browser.
-
-### 2. Standalone Python Algorithm CLI
-
-For classroom viva or terminal demonstrations, run the pure Python optimization engine:
-
-```bash
-# Run comparison between Swargate and Hinjewadi during Morning Rush
-python scripts/optimizer_engine.py --origin swargate --destination hinjewadi_ph3 --hour 8 --scenario morning_rush
-
-# Run Katraj to Hadapsar during Off-Peak
-python scripts/optimizer_engine.py --origin katraj_depot --destination hadapsar_gadital --hour 14
-```
+### Q5: How does your implementation detect negative cycles in Bellman-Ford?
+> **Answer**:  
+> In any graph without negative cycles, the shortest path between any two vertices contains at most $|V| - 1$ edges. Thus, all shortest paths are finalized after $|V| - 1$ relaxation rounds.  
+> We run one extra pass (the $|V|$-th round). If any edge can still be relaxed (`dist[u] + w < dist[v]`), it proves that a cycle with negative total weight exists.
 
 ---
 
-## 🎓 College Viva Examination Q&A Cheat Sheet
-
-**Q1: Why use a crowd-weighted cost function over simple Dijkstra?**  
-*Answer:* Simple Dijkstra only optimizes physical distance. In urban transit networks like Pune, the shortest physical route often traverses saturated bottleneck corridors (such as University Circle or Shivaji Road). Our model factors in real-time passenger crowd density and delay penalties to route around chokepoints.
-
-**Q2: What is the time complexity of the routing algorithm?**  
-*Answer:* Using a Min-Priority Heap (priority queue), the time complexity is $\mathcal{O}((|V| + |E|) \log |V|)$ where $|V| = 24$ hubs and $|E| = 38$ corridors. This computes in under 5 milliseconds on standard client devices.
-
-**Q3: Where did the map and bus data come from?**  
-*Answer:* The stops, routes, and geographic road shapes are extracted from official PMPML GTFS transit feeds, representing 6,745 bus stops and 315 routes across Pune and PCMC.
-
----
-
-## 📜 License
-MIT License. Created for academic and educational transit research.
+## 👥 Authors & Academic Attribution
+- **Course**: Data Structures & Algorithms / Design & Analysis of Algorithms
+- **Institution**: Pune University (SPPU) / Engineering College Project
+- **Data Agency**: Pune Mahanagar Parivahan Mahamandal Ltd (PMPML) GTFS Dataset
