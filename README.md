@@ -165,11 +165,12 @@ cpp_project/
 ├── data/
 │   ├── stops.csv             # 24 Pune Hubs (ID, Name, Lat, Lon, Category)
 │   ├── routes.csv            # 38 Transit Corridors (Source, Target, Distance, Time, Road Type)
-│   ├── shapes.csv            # Road geometry coordinates for real map curves
+│   ├── shapes.csv            # Real road geometry (7,104 points from OSRM) for map curves
 │   ├── traffic_history.csv   # 14,400 synthetic traffic observations (date, hour, road type, factor)
 │   └── holidays.csv          # Public holidays & festivals (lighter traffic)
 ├── tools/
-│   └── generate_traffic_data.py # Regenerates traffic_history.csv (Python stdlib only)
+│   ├── generate_traffic_data.py # Regenerates traffic_history.csv (Python stdlib only)
+│   └── fetch_road_shapes.py  # Regenerates shapes.csv with real road paths (OSRM / OpenStreetMap)
 ├── src/
 │   ├── core/
 │   │   ├── Stop.h            # Stop data structure
@@ -190,7 +191,7 @@ cpp_project/
 │       ├── DepartureChart.h  # Bar chart for "Best Time to Leave" (QPainter)
 │       └── MapBridge.h       # C++ to JavaScript WebChannel bridge
 ├── web/
-│   ├── map.html              # Embedded Leaflet OpenStreetMap frontend
+│   ├── map.html              # Leaflet map: dark/light OSM themes, traffic colours, route pins
 │   ├── leaflet.js / .css     # Offline Leaflet 1.9.4 map engine
 │   └── qwebchannel.js        # Qt WebChannel JavaScript client
 ├── Makefile                  # Portable build automation

@@ -5,14 +5,138 @@
   <title>Pune Transit Real Map</title>
   <link rel="stylesheet" href="leaflet.css" />
   <style>
+    :root {
+      --panel-bg: rgba(15, 23, 42, 0.92);
+      --panel-border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
     html, body, #map {
       height: 100%;
       width: 100%;
       margin: 0;
       padding: 0;
-      background: #111827;
+      background: #0b1120;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+
+    /* ---- Base map themes: OpenStreetMap tiles restyled with CSS filters ---- */
+    /* Dark: invert the light OSM style, then rotate hues back so water stays blue. */
+    body.theme-dark .leaflet-tile-pane {
+      filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.85) saturate(0.25);
+    }
+    body.theme-dark #map { background: #0b1120; }
+    /* Light: desaturated grey so coloured roads stand out. */
+    body.theme-light .leaflet-tile-pane {
+      filter: grayscale(0.9) brightness(1.04) contrast(0.9);
+    }
+    body.theme-light #map { background: #e5e7eb; }
+
+    /* ---- Floating panels ---- */
+    .panel {
+      position: absolute;
+      z-index: 1000;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      color: var(--text);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+    }
+    .map-badge {
+      top: 12px;
+      left: 56px;
+      max-width: calc(100% - 260px);
+      padding: 8px 14px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .map-badge b { color: #f8fafc; }
+    .map-badge .sub { color: var(--muted); font-size: 12px; }
+
+    .theme-toggle {
+      top: 12px;
+      right: 12px;
+      padding: 4px;
+      display: flex;
+      gap: 4px;
+    }
+    .theme-toggle button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .theme-toggle button.active { background: #2563eb; color: #ffffff; }
+
+    .legend {
+      bottom: 24px;
+      right: 12px;
+      padding: 10px 14px;
+      font-size: 12px;
+      line-height: 1.9;
+      min-width: 170px;
+    }
+    .legend .title { font-weight: 700; color: #f8fafc; margin-bottom: 2px; }
+    .legend .row { display: flex; align-items: center; gap: 8px; }
+    .legend .swatch {
+      width: 26px;
+      height: 6px;
+      border-radius: 3px;
+      box-shadow: 0 0 0 1.5px #0b1120;
+    }
+    .legend .route-swatch {
+      width: 26px;
+      height: 7px;
+      border-radius: 4px;
+      box-shadow: 0 0 0 2px #ffffff;
+    }
+    .legend .pin {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+      box-sizing: border-box;
+    }
+    .legend .divider { border-top: 1px solid var(--panel-border); margin: 6px 0 4px; }
+    .hidden { display: none !important; }
+
+    /* ---- Origin / destination pins ---- */
+    .endpoint-pin {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+      box-sizing: border-box;
+    }
+    .pin-origin { background: #2563eb; }
+    .pin-dest   { background: #111827; }
+
+    /* Animated dashes on the route show the direction of travel. */
+    .route-flow {
+      stroke-dasharray: 2 14;
+      animation: flow 1.2s linear infinite;
+    }
+    @keyframes flow { to { stroke-dashoffset: -16; } }
+
+    /* ---- Popups & tooltips ---- */
     .leaflet-popup-content-wrapper {
       background: #1f2937;
       color: #f3f4f6;
@@ -20,23 +144,20 @@
       border: 1px solid #374151;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
-    .leaflet-popup-tip {
-      background: #1f2937;
-    }
-    .stop-popup h3 {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-      color: #38bdf8;
-    }
-    .stop-popup p {
-      margin: 0 0 10px 0;
+    .leaflet-popup-tip { background: #1f2937; }
+    .leaflet-tooltip {
+      background: #0f172a;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      border-radius: 6px;
       font-size: 12px;
-      color: #9ca3af;
+      padding: 4px 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
-    .popup-btn-row {
-      display: flex;
-      gap: 6px;
-    }
+    .leaflet-tooltip-top:before { border-top-color: #334155; }
+    .stop-popup h3 { margin: 0 0 6px 0; font-size: 14px; color: #38bdf8; }
+    .stop-popup p { margin: 0 0 10px 0; font-size: 12px; color: #9ca3af; }
+    .popup-btn-row { display: flex; gap: 6px; }
     .popup-btn {
       flex: 1;
       padding: 5px 8px;
@@ -45,99 +166,113 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-origin {
-      background: #10b981;
       color: #ffffff;
     }
-    .btn-origin:hover { background: #059669; }
-    .btn-dest {
-      background: #ef4444;
-      color: #ffffff;
-    }
-    .btn-dest:hover { background: #dc2626; }
-    .map-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(17, 24, 39, 0.85);
-      border: 1px solid #374151;
-      border-radius: 6px;
-      padding: 6px 12px;
-      color: #e5e7eb;
-      font-size: 12px;
-      backdrop-filter: blur(4px);
-    }
-    .traffic-legend {
-      position: absolute;
-      bottom: 24px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(17, 24, 39, 0.85);
-      border: 1px solid #374151;
-      border-radius: 6px;
-      padding: 8px 12px;
-      color: #e5e7eb;
-      font-size: 12px;
-      line-height: 1.6;
-      display: none;
-    }
-    .traffic-legend span {
-      display: inline-block;
-      width: 18px;
-      height: 4px;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
+    .btn-origin { background: #2563eb; }
+    .btn-origin:hover { background: #1d4ed8; }
+    .btn-dest { background: #374151; }
+    .btn-dest:hover { background: #4b5563; }
   </style>
 </head>
-<body>
+<body class="theme-dark">
   <div id="map"></div>
-  <div class="map-badge" id="map-status">🚍 Pune PMPML Real Transit Map</div>
-  <div class="traffic-legend" id="traffic-legend">
-    <b>Predicted traffic</b><br>
-    <span style="background:#22c55e"></span>Free (&lt; 1.3x)<br>
-    <span style="background:#eab308"></span>Moderate (1.3 - 1.8x)<br>
-    <span style="background:#ef4444"></span>Heavy (&gt; 1.8x)
+
+  <div class="panel map-badge" id="map-status">🚍 Pune PMPML Transit Map</div>
+
+  <div class="panel theme-toggle">
+    <button id="btn-dark" class="active" onclick="setTheme('dark')">🌙 Dark</button>
+    <button id="btn-light" onclick="setTheme('light')">☀️ Light</button>
+  </div>
+
+  <div class="panel legend" id="legend">
+    <div id="legend-route" class="hidden">
+      <div class="title">Route</div>
+      <div class="row"><span class="route-swatch" id="legend-route-color"></span><span id="legend-route-name">Best route</span></div>
+      <div class="row"><span class="pin" style="background:#2563eb">A</span>Origin</div>
+      <div class="row"><span class="pin" style="background:#111827">B</span>Destination</div>
+      <div class="divider"></div>
+    </div>
+    <div id="legend-network">
+      <div class="title">Bus corridors</div>
+      <div class="row"><span class="swatch" style="background:#64748b"></span>Road (no traffic)</div>
+    </div>
+    <div id="legend-traffic" class="hidden">
+      <div class="title">Predicted traffic</div>
+      <div class="row"><span class="swatch" style="background:#22c55e"></span>Free (&lt; 1.3x)</div>
+      <div class="row"><span class="swatch" style="background:#f59e0b"></span>Moderate (1.3 - 1.8x)</div>
+      <div class="row"><span class="swatch" style="background:#ef4444"></span>Heavy (&gt; 1.8x)</div>
+    </div>
   </div>
 
   <script src="leaflet.js"></script>
   <script src="qwebchannel.js"></script>
   <script>
-    let map = null;
-    let stopMarkers = {};
-    let networkLayer = null;
-    let routeLayer = null;
-    let qtBridge = null;
-    let edgeLines = [];   // one Leaflet polyline per edge, same order as C++ getAllEdges()
-    let edgeInfo = [];
+    // ------------------------------------------------------------------
+    // Colours. Route colours are deliberately NOT green/amber/red,
+    // so a route never blends in with the traffic colours.
+    // ------------------------------------------------------------------
+    const ROAD_DEFAULT = '#64748b';
+    const TRAFFIC_FREE = '#22c55e';
+    const TRAFFIC_MODERATE = '#f59e0b';
+    const TRAFFIC_HEAVY = '#ef4444';
+    const ROUTE_COLORS = {
+      dijkstra: '#38bdf8',     // sky blue
+      astar: '#e879f9',        // magenta
+      bellman: '#a78bfa'       // violet
+    };
 
-    // Connect to Qt QWebChannel if available
-    if (typeof QWebChannel !== 'undefined') {
+    let map = null;
+    let qtBridge = null;
+    let stopMarkers = {};
+    let stopInfo = {};
+    let roadLayer = null;
+    let stopLayer = null;
+    let routeLayer = null;
+    let corridors = [];       // [{casing, line, info, edgeIndexes:[...]}]
+    let trafficOn = false;
+    let lastFactors = [];
+    let routeShown = false;
+    let lastRoute = null;     // last route drawn, so a theme switch can redraw it
+
+    if (typeof QWebChannel !== 'undefined' && typeof qt !== 'undefined') {
       new QWebChannel(qt.webChannelTransport, function (channel) {
         qtBridge = channel.objects.bridge;
       });
     }
 
     function initMap() {
-      // Center on Pune
-      map = L.map('map', {
-        center: [18.5204, 73.8567],
-        zoom: 12,
-        zoomControl: true
-      });
+      if (map) return;
+      map = L.map('map', { center: [18.5204, 73.8567], zoom: 12, zoomControl: true });
 
-      // CartoDB Dark Matter tiles (fallback to standard OSM if dark is blocked)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
+      // Plain OpenStreetMap tiles (no API key needed), restyled by the CSS theme filters.
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
 
-      networkLayer = L.layerGroup().addTo(map);
+      // Draw order (bottom to top): roads, route, stops.
+      map.createPane('roads').style.zIndex = 410;
+      map.createPane('route').style.zIndex = 420;
+      map.createPane('stops').style.zIndex = 430;
+
+      roadLayer = L.layerGroup().addTo(map);
       routeLayer = L.layerGroup().addTo(map);
+      stopLayer = L.layerGroup().addTo(map);
+
+      try {
+        const saved = localStorage.getItem('mapTheme');
+        if (saved === 'light' || saved === 'dark') setTheme(saved);
+      } catch (e) { /* storage unavailable: keep default */ }
+    }
+
+    function setTheme(theme) {
+      document.body.classList.toggle('theme-dark', theme === 'dark');
+      document.body.classList.toggle('theme-light', theme === 'light');
+      document.getElementById('btn-dark').classList.toggle('active', theme === 'dark');
+      document.getElementById('btn-light').classList.toggle('active', theme === 'light');
+      try { localStorage.setItem('mapTheme', theme); } catch (e) { /* ignore */ }
+      restyleRoads();
+      if (lastRoute && lastRoute.found) displayRoute(lastRoute, true);   // recolour the route in place
     }
 
     function notifyQt(action, stopId) {
@@ -146,151 +281,241 @@
       } else if (window.qtBridgeHandler) {
         window.qtBridgeHandler(action, stopId);
       }
+      map.closePopup();
     }
 
+    function trafficColor(f) {
+      return f < 1.3 ? TRAFFIC_FREE : (f < 1.8 ? TRAFFIC_MODERATE : TRAFFIC_HEAVY);
+    }
+
+    function trafficLabel(f) {
+      return f < 1.3 ? 'Free' : (f < 1.8 ? 'Moderate' : 'Heavy');
+    }
+
+    function roadTypeLabel(t) {
+      return ({ it_corridor: 'IT corridor', city_center: 'City centre', arterial: 'Arterial', highway: 'Highway' })[t] || 'Road';
+    }
+
+    // ------------------------------------------------------------------
+    // Network: stops + corridors. Called by C++ (sendNetworkToMap).
+    // ------------------------------------------------------------------
     function setTransitNetwork(stops, edges) {
-      if (!map) initMap();
-      networkLayer.clearLayers();
+      initMap();
+      roadLayer.clearLayers();
+      stopLayer.clearLayers();
       routeLayer.clearLayers();
       stopMarkers = {};
-      edgeLines = [];
-      edgeInfo = edges;
+      stopInfo = {};
+      corridors = [];
+      routeShown = false;
+      document.getElementById('legend-route').classList.add('hidden');
 
-      // 1. Draw base road corridors
-      edges.forEach(e => {
-        let line = null;
-        if (e.polyline && e.polyline.length > 1) {
-          line = L.polyline(e.polyline, {
-            color: '#475569',
-            weight: 3,
-            opacity: 0.65,
-            dashArray: '4, 4'
-          }).bindTooltip(`${e.road_name || 'Corridor'}: ${e.distance_km} km`, { sticky: true }).addTo(networkLayer);
-        }
-        edgeLines.push(line);
+      // 1. Roads. Each corridor arrives twice (A->B and B->A); draw it once
+      //    and remember both edge indexes so traffic factors still line up.
+      const byPair = {};
+      edges.forEach((e, i) => {
+        const key = [e.source, e.target].sort().join('|');
+        if (byPair[key]) { byPair[key].edgeIndexes.push(i); return; }
+        if (!e.polyline || e.polyline.length < 2) return;
+
+        const casing = L.polyline(e.polyline, {
+          pane: 'roads', color: '#0b1120', weight: 7, opacity: 0.55, interactive: false
+        }).addTo(roadLayer);
+        const line = L.polyline(e.polyline, {
+          pane: 'roads', color: ROAD_DEFAULT, weight: 4, opacity: 0.95
+        }).addTo(roadLayer);
+
+        const c = { casing, line, info: e, edgeIndexes: [i] };
+        line.bindTooltip('', { sticky: true });
+        line.on('mouseover', () => line.setStyle({ weight: 7 }));
+        line.on('mouseout', () => restyleCorridor(c));
+        byPair[key] = c;
+        corridors.push(c);
       });
 
-      // 2. Draw Stop Markers
+      // 2. Stops: white dots with a dark ring (names on hover).
       stops.forEach(s => {
-        let marker = L.circleMarker([s.lat, s.lon], {
-          radius: 7,
-          fillColor: '#38bdf8',
-          color: '#ffffff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.9
+        stopInfo[s.id] = s;
+        const marker = L.circleMarker([s.lat, s.lon], {
+          pane: 'stops', radius: 6, fillColor: '#f8fafc', fillOpacity: 1, color: '#0f172a', weight: 2.5
         });
-
-        let popupContent = `
+        marker.options.baseRadius = 6;
+        marker.bindPopup(`
           <div class="stop-popup">
             <h3>${s.name}</h3>
             <p>${s.category || 'Transit Stop'}<br><small>(${s.lat.toFixed(4)}, ${s.lon.toFixed(4)})</small></p>
             <div class="popup-btn-row">
-              <button class="popup-btn btn-origin" onclick="notifyQt('origin', '${s.id}')">📍 Set Origin</button>
-              <button class="popup-btn btn-dest" onclick="notifyQt('destination', '${s.id}')">🎯 Set Destination</button>
+              <button class="popup-btn btn-origin" onclick="notifyQt('origin', '${s.id}')">A · Set Origin</button>
+              <button class="popup-btn btn-dest" onclick="notifyQt('destination', '${s.id}')">B · Set Destination</button>
             </div>
-          </div>
-        `;
-        marker.bindPopup(popupContent);
-        marker.bindTooltip(s.name, { permanent: false, direction: 'top', offset: [0, -6] });
-        marker.addTo(networkLayer);
+          </div>`);
+        marker.bindTooltip(s.name, { direction: 'top', offset: [0, -8] });
+        marker.on('mouseover', () => marker.setRadius(marker.options.baseRadius + 2));
+        marker.on('mouseout', () => marker.setRadius(marker.options.baseRadius));
+        marker.addTo(stopLayer);
         stopMarkers[s.id] = marker;
       });
 
-      document.getElementById('map-status').innerText = `🚍 Pune Transit Map (${stops.length} stops, ${edges.length} corridors)`;
+      lastFactors = [];
+      restyleRoads();
+      setStatus(`🚍 <b>Pune PMPML Transit Map</b><br><span class="sub">${stops.length} stops · ${corridors.length} corridors · click a stop to set origin / destination</span>`);
+
+      if (corridors.length) {
+        const bounds = corridors[0].line.getBounds();
+        corridors.forEach(c => bounds.extend(c.line.getBounds()));
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
     }
 
-    function displayRoute(routeData) {
-      if (!map) initMap();
+    // ------------------------------------------------------------------
+    // Traffic colours. Called by C++ (sendTrafficToMap): one factor per edge.
+    // ------------------------------------------------------------------
+    function setTrafficFactors(factors, on) {
+      lastFactors = factors || [];
+      trafficOn = !!on;
+      document.getElementById('legend-traffic').classList.toggle('hidden', !trafficOn);
+      document.getElementById('legend-network').classList.toggle('hidden', trafficOn);
+      restyleRoads();
+    }
+
+    function corridorFactor(c) {
+      // Both directions share the same road type, so their factors are equal.
+      let f = 1.0;
+      c.edgeIndexes.forEach(i => { if (lastFactors[i] !== undefined) f = Math.max(f, lastFactors[i]); });
+      return f;
+    }
+
+    function restyleCorridor(c) {
+      const f = corridorFactor(c);
+      const light = document.body.classList.contains('theme-light');
+      // When a route is shown, fade the other roads so the route stands out,
+      // but keep traffic colours readable.
+      const opacity = routeShown ? (trafficOn ? 0.75 : 0.45) : 0.95;
+      c.casing.setStyle({ color: light ? '#ffffff' : '#0b1120', opacity: routeShown ? 0.35 : 0.6 });
+      c.line.setStyle({
+        color: trafficOn ? trafficColor(f) : (light ? '#475569' : ROAD_DEFAULT),
+        weight: trafficOn ? 5 : 4,
+        opacity: opacity
+      });
+      const e = c.info;
+      let tip = `<b>${e.road_name || 'Corridor'}</b><br>${roadTypeLabel(e.road_type)} · ${e.distance_km} km`;
+      if (trafficOn) tip += `<br>Traffic: <b style="color:${trafficColor(f)}">${trafficLabel(f)} (${f.toFixed(2)}x)</b>`;
+      c.line.setTooltipContent(tip);
+    }
+
+    function restyleRoads() {
+      corridors.forEach(restyleCorridor);
+    }
+
+    // ------------------------------------------------------------------
+    // Route. Called by C++ (sendRouteToMap).
+    // ------------------------------------------------------------------
+    // Deeper shades for the light map, where pale colours wash out.
+    const ROUTE_COLORS_LIGHT = {
+      dijkstra: '#0369a1',
+      astar: '#a21caf',
+      bellman: '#6d28d9'
+    };
+
+    function isLight() {
+      return document.body.classList.contains('theme-light');
+    }
+
+    function routeColorFor(name) {
+      const palette = isLight() ? ROUTE_COLORS_LIGHT : ROUTE_COLORS;
+      if (name.includes('A*')) return palette.astar;
+      if (name.includes('Bellman')) return palette.bellman;
+      return palette.dijkstra;
+    }
+
+    function endpointIcon(letter, cls) {
+      return L.divIcon({
+        className: '',
+        html: `<div class="endpoint-pin ${cls}">${letter}</div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+    }
+
+    function resetStopMarkers() {
+      Object.values(stopMarkers).forEach(m => {
+        m.options.baseRadius = 6;
+        m.setRadius(6);
+        m.setStyle({ color: '#0f172a', weight: 2.5 });
+      });
+    }
+
+    // keepView = true redraws the route (e.g. after a theme switch) without re-zooming.
+    function displayRoute(routeData, keepView) {
+      initMap();
+      lastRoute = routeData;
       routeLayer.clearLayers();
+      resetStopMarkers();
 
       if (!routeData || !routeData.found) {
-        document.getElementById('map-status').innerText = 'No route found between endpoints';
+        routeShown = false;
+        restyleRoads();
+        document.getElementById('legend-route').classList.add('hidden');
+        setStatus('⚠️ <b>No route found</b> between the selected stops');
         return;
       }
 
-      // Pick color by algorithm
-      let routeColor = '#10b981'; // Dijkstra emerald
-      if (routeData.algorithm_name.includes('A*')) routeColor = '#06b6d4'; // Cyan for A*
-      if (routeData.algorithm_name.includes('Bellman')) routeColor = '#f59e0b'; // Amber for Bellman-Ford
+      const color = routeColorFor(routeData.algorithm_name);
+      routeShown = true;
+      restyleRoads();
 
-      // Draw route polyline
-      if (routeData.polyline && routeData.polyline.length > 0) {
-        // Outer glowing shadow line
-        L.polyline(routeData.polyline, {
-          color: routeColor,
-          weight: 8,
-          opacity: 0.4
-        }).addTo(routeLayer);
-
-        // Core bright line
-        let mainLine = L.polyline(routeData.polyline, {
-          color: routeColor,
-          weight: 4,
-          opacity: 1.0
-        }).addTo(routeLayer);
-
-        map.fitBounds(mainLine.getBounds(), { padding: [40, 40] });
+      if (routeData.polyline && routeData.polyline.length > 1) {
+        // Outline -> coloured core -> animated white dashes (direction of travel).
+        // The outline is white on the dark map and near-black on the light map.
+        const outline = isLight() ? '#0f172a' : '#ffffff';
+        L.polyline(routeData.polyline, { pane: 'route', color: outline, weight: 13, opacity: 0.95, interactive: false }).addTo(routeLayer);
+        const core = L.polyline(routeData.polyline, { pane: 'route', color: color, weight: 8, opacity: 1 }).addTo(routeLayer);
+        L.polyline(routeData.polyline, { pane: 'route', color: '#ffffff', weight: 3, opacity: 0.9, className: 'route-flow', interactive: false }).addTo(routeLayer);
+        core.bindTooltip(`${routeData.algorithm_name}: ${routeData.total_distance_km} km · ${Number(routeData.total_time_mins).toFixed(1)} min`, { sticky: true });
+        if (!keepView) map.fitBounds(core.getBounds(), { padding: [70, 70], maxZoom: 13 });
       }
 
-      // Highlight Start Marker (Green)
-      if (routeData.path_ids && routeData.path_ids.length > 0) {
-        let startId = routeData.path_ids[0];
-        let endId = routeData.path_ids[routeData.path_ids.length - 1];
-
-        if (stopMarkers[startId]) {
-          let pos = stopMarkers[startId].getLatLng();
-          L.circleMarker(pos, {
-            radius: 11,
-            fillColor: '#10b981',
-            color: '#ffffff',
-            weight: 3,
-            fillOpacity: 1
-          }).bindPopup(`<b>ORIGIN:</b> ${stopMarkers[startId].getTooltip().getContent()}`).addTo(routeLayer).openPopup();
-        }
-
-        if (stopMarkers[endId]) {
-          let pos = stopMarkers[endId].getLatLng();
-          L.circleMarker(pos, {
-            radius: 11,
-            fillColor: '#ef4444',
-            color: '#ffffff',
-            weight: 3,
-            fillOpacity: 1
-          }).bindPopup(`<b>DESTINATION:</b> ${stopMarkers[endId].getTooltip().getContent()}`).addTo(routeLayer);
-        }
-      }
-
-      document.getElementById('map-status').innerText =
-        `⚡ ${routeData.algorithm_name}: ${routeData.total_distance_km} km | ${routeData.total_time_mins} mins | ${routeData.execution_time_us} µs`;
-    }
-
-    // Colour every road by its predicted congestion factor (green / yellow / red).
-    function setTrafficFactors(factors, trafficOn) {
-      document.getElementById('traffic-legend').style.display = trafficOn ? 'block' : 'none';
-      edgeLines.forEach((line, i) => {
-        if (!line) return;
-        const e = edgeInfo[i];
-        const f = factors[i] || 1.0;
-        if (!trafficOn) {
-          line.setStyle({ color: '#475569', weight: 3, opacity: 0.65, dashArray: '4, 4' });
-          line.setTooltipContent(`${e.road_name || 'Corridor'}: ${e.distance_km} km`);
-          return;
-        }
-        const color = f < 1.3 ? '#22c55e' : (f < 1.8 ? '#eab308' : '#ef4444');
-        line.setStyle({ color: color, weight: 4, opacity: 0.8, dashArray: null });
-        line.setTooltipContent(`${e.road_name || 'Corridor'} (${e.road_type}): ${e.distance_km} km, traffic ${f.toFixed(2)}x`);
+      // Highlight the intermediate stops on the route with the route colour.
+      const ids = routeData.path_ids || [];
+      ids.forEach(id => {
+        const m = stopMarkers[id];
+        if (m) { m.options.baseRadius = 7; m.setRadius(7); m.setStyle({ color: color, weight: 3.5 }); }
       });
+
+      // Origin "A" and destination "B" pins.
+      if (ids.length > 0) {
+        const a = stopInfo[ids[0]], b = stopInfo[ids[ids.length - 1]];
+        if (a) L.marker([a.lat, a.lon], { pane: 'stops', icon: endpointIcon('A', 'pin-origin'), zIndexOffset: 1000 })
+                 .bindTooltip(`<b>Origin:</b> ${a.name}`, { direction: 'top', offset: [0, -14] }).addTo(routeLayer);
+        if (b) L.marker([b.lat, b.lon], { pane: 'stops', icon: endpointIcon('B', 'pin-dest'), zIndexOffset: 1000 })
+                 .bindTooltip(`<b>Destination:</b> ${b.name}`, { direction: 'top', offset: [0, -14] }).addTo(routeLayer);
+      }
+
+      document.getElementById('legend-route').classList.remove('hidden');
+      document.getElementById('legend-route-color').style.background = color;
+      document.getElementById('legend-route-name').innerText = routeData.algorithm_name.replace(' Algorithm', '');
+
+      const from = stopInfo[ids[0]] ? stopInfo[ids[0]].name : '';
+      const to = stopInfo[ids[ids.length - 1]] ? stopInfo[ids[ids.length - 1]].name : '';
+      setStatus(`<b>${from} → ${to}</b><br><span class="sub">⚡ ${routeData.algorithm_name} · ${routeData.total_distance_km} km · ` +
+                `${Number(routeData.total_time_mins).toFixed(1)} min · ${ids.length} stops · ${routeData.execution_time_us} µs</span>`);
     }
 
     function clearRoute() {
       if (routeLayer) routeLayer.clearLayers();
-      document.getElementById('map-status').innerText = 'Route cleared';
+      lastRoute = null;
+      resetStopMarkers();
+      routeShown = false;
+      restyleRoads();
+      document.getElementById('legend-route').classList.add('hidden');
+      setStatus('Route cleared');
     }
 
-    window.onload = function() {
-      initMap();
-    };
+    function setStatus(html) {
+      document.getElementById('map-status').innerHTML = html;
+    }
+
+    window.onload = function () { initMap(); };
   </script>
 </body>
 </html>
